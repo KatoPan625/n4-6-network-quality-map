@@ -1,0 +1,26 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.13.15, pytest-9.2.0, pluggy-1.7.0 -- D:\University\HKDN\n46-backend-sandbox\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: D:\University\HKDN\n46-backend-sandbox
+configfile: pyproject.toml
+testpaths: tests
+plugins: anyio-4.16.0
+collecting ... collected 15 items
+
+tests/test_api.py::test_health PASSED                                    [  6%]
+tests/test_api.py::test_health_db_reports_postgis PASSED                 [ 13%]
+tests/test_api.py::test_kpis_have_unit_and_description PASSED            [ 20%]
+tests/test_api.py::test_regions_is_geojson_without_station_fields PASSED [ 26%]
+tests/test_kpi_api.py::test_kpi_values_returns_all_regions_with_unit PASSED [ 33%]
+tests/test_kpi_api.py::test_missing_is_null_not_zero PASSED              [ 40%]
+tests/test_kpi_api.py::test_period_without_any_data_is_missing_everywhere PASSED [ 46%]
+tests/test_kpi_api.py::test_region_filter PASSED                         [ 53%]
+tests/test_kpi_api.py::test_unknown_kpi_is_404 PASSED                    [ 60%]
+tests/test_kpi_api.py::test_bad_date_and_period_type_are_422 PASSED      [ 66%]
+tests/test_kpi_api.py::test_region_detail_series PASSED                  [ 73%]
+tests/test_kpi_api.py::test_region_detail_date_range_and_kpi_filter PASSED [ 80%]
+tests/test_kpi_api.py::test_region_detail_errors PASSED                  [ 86%]
+tests/test_kpi_api.py::test_compare_delta_is_b_minus_a PASSED            [ 93%]
+tests/test_kpi_api.py::test_compare_delta_null_when_one_period_missing PASSED [100%]
+
+============================= 15 passed in 0.90s ==============================
