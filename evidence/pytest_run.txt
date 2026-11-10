@@ -23,4 +23,4 @@ tests/test_kpi_api.py::test_region_detail_errors PASSED                  [ 86%]
 tests/test_kpi_api.py::test_compare_delta_is_b_minus_a PASSED            [ 93%]
 tests/test_kpi_api.py::test_compare_delta_null_when_one_period_missing PASSED [100%]
 
-============================= 15 passed in 0.90s ==============================
+============================= 15 passed in 0.85s ==============================

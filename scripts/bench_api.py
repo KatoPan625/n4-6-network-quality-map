@@ -25,7 +25,7 @@ CASES = [
 
 def pct(data: list[float], p: float) -> float:
     s = sorted(data)
-    return s[min(len(s) - 1, int(round(p * (len(s) - 1))))]
+    return s[min(len(s) - 1, round(p * (len(s) - 1)))]
 
 
 def main() -> None:

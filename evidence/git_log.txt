@@ -1,0 +1,44 @@
+﻿commit f8e875c  2026-11-10 20:35  KatoPan625
+    N4.6 backend sandbox: FastAPI + PostGIS, 7 API doc, du lieu thu, 15 test
+
+ .env.example                         |   6 +
+ .gitignore                           |  13 +
+ .python-version                      |   1 +
+ README.md                            |  48 ++
+ app/__init__.py                      |   0
+ app/config.py                        |  21 +
+ app/db.py                            |  14 +
+ app/main.py                          |  80 +++
+ app/routes_kpi.py                    | 136 +++++
+ bruno/01 Health DB.bru               |  18 +
+ bruno/02 KPI list.bru                |  18 +
+ bruno/03 Regions GeoJSON.bru         |  18 +
+ bruno/04 KPI values.bru              |  18 +
+ bruno/05 Region detail.bru           |  18 +
+ bruno/06 Compare.bru                 |  18 +
+ bruno/07 Unknown KPI 404.bru         |  17 +
+ bruno/08 Bad date 422.bru            |  17 +
+ bruno/bruno.json                     |   1 +
+ bruno/environments/local.bru         |   3 +
+ data/sample_grid.geojson             | 338 ++++++++++++
+ data/sample_kpi.csv                  |  37 ++
+ db/init/01_schema_draft.sql          |  34 ++
+ docker-compose.yml                   |  21 +
+ docs/api-contract.md                 | 100 ++++
+ docs/openapi.json                    | 491 +++++++++++++++++
+ evidence/2026-11-10_health_db.png    | Bin 0 -> 3355 bytes
+ evidence/2026-11-10_swagger_docs.png | Bin 0 -> 48072 bytes
+ evidence/bench_baseline.txt          | Bin 0 -> 972 bytes
+ evidence/bruno_run.txt               |  39 ++
+ evidence/pytest_run.txt              |  26 +
+ pyproject.toml                       |  32 ++
+ scripts/bench_api.py                 |  50 ++
+ scripts/export_openapi.py            |  16 +
+ scripts/load_sample.py               |  61 +++
+ scripts/make_bruno.ps1               |  29 +
+ scripts/make_sample_data.py          |  65 +++
+ tests/__init__.py                    |   0
+ tests/test_api.py                    |  32 ++
+ tests/test_kpi_api.py                |  87 +++
+ uv.lock                              | 997 +++++++++++++++++++++++++++++++++++
+ 40 files changed, 2920 insertions(+)
