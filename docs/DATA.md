@@ -1,65 +1,79 @@
-# Chuẩn bị dữ liệu N4.6
+# Dữ liệu và KPI N4.6
 
-Hướng dẫn khảo sát dữ liệu để triển khai bản đồ KPI theo vùng. **Đây là đề xuất ban đầu, chưa phải schema hoặc hợp đồng API đã chốt.** Chưa có bộ dữ liệu thật hay mô phỏng trong kho mã nguồn.
+Cập nhật: 18/11/2026. Thiết kế chi tiết của CSDL ở [SCHEMA-V2.1.md](SCHEMA-V2.1.md); SQL ở `db/N4.6_Database_Schema_V2.1.sql`. Tài liệu này tóm tắt quy tắc dữ liệu cho người sinh, nhập và đọc dữ liệu.
 
-## Nguồn và quyền sử dụng
+## Hiện trạng
 
-Ưu tiên dữ liệu đã tổng hợp theo vùng và thời gian được mentor cho phép sử dụng. Dữ liệu công khai hoặc mô phỏng là phương án cần xác nhận nếu chưa nhận được dữ liệu phù hợp.
+| Nguồn (`source_code`) | Loại | Mặc định | Nội dung | Người phụ trách |
+| --- | --- | --- | --- | --- |
+| `SIM-V1` | Mô phỏng | Có | Bộ dữ liệu chính: 165 ô × 8 KPI × 26 tuần (~34.000 dòng). **Chưa có**; phương pháp, giả định đang để trống chờ điền | Vũ |
+| `BE-SAMPLE` | Mô phỏng | Không | Dữ liệu thử của Backend: 165 ô × 8 KPI × 2 tuần (19/10 và 26/10/2026), giá trị ngẫu nhiên. Chỉ để test API, không dùng cho bản đồ hay báo cáo | An |
 
-Với mỗi nguồn, ghi lại:
+Chưa có dữ liệu thật hay dữ liệu công khai. VNPT NET khả năng cao không cung cấp KPI; thầy cho phép dùng dữ liệu mô phỏng hoặc công khai (email 17/11).
 
-- Tên nguồn, đường dẫn hoặc đơn vị cung cấp, ngày truy cập/nhận và phiên bản.
-- Phạm vi địa lý/thời gian, phương pháp đo, KPI và chu kỳ cập nhật.
-- Giấy phép hoặc văn bản cho phép; quyền lưu trữ, sửa đổi, công bố, demo và phân phối lại.
-- Yêu cầu ghi công, hạn chế bảo mật, thời hạn lưu và người được truy cập.
-- Nguồn/giấy phép của bản đồ nền và ranh giới, kiểm tra riêng với dữ liệu KPI.
+## Quy tắc nguồn dữ liệu
 
-Không coi dữ liệu xem được trên website là dữ liệu được phép tải và phát hành lại. Không đưa dữ liệu thật, tọa độ nhạy cảm, thông tin thuê bao hoặc thông tin truy cập dịch vụ vào kho mã nguồn khi chưa được phép.
+- Mỗi giá trị KPI thuộc đúng một nguồn trong bảng `data_sources`.
+- Mỗi nguồn phải mô tả: loại nguồn, tính chất (`real`/`simulated`), phạm vi không gian và thời gian, phương pháp thu thập/sinh, phiên bản script, seed, giả định, giới hạn.
+- Nguồn loại `simulation` bắt buộc `data_nature = simulated`; CSDL chặn trường hợp ngược lại.
+- Bản đồ, API và báo cáo luôn hiện nhãn **"Dữ liệu mô phỏng"** khi `data_nature = simulated`. Không dùng dữ liệu mô phỏng để kết luận về chất lượng mạng thực tế của VNPT.
+- Không đưa dữ liệu thật, tọa độ trạm, thông tin thuê bao vào repo. Dữ liệu chưa được phép chia sẻ để trong `data/raw/` hoặc `data/private/` (đã bị `.gitignore`).
 
-## Trường dữ liệu ứng viên
+## Đơn vị không gian và thời gian
 
-Tên trường chỉ để trao đổi; sẽ điều chỉnh theo nguồn và thiết kế được thống nhất. Một bản ghi KPI dự kiến biểu diễn **một chỉ số của một vùng trong một kỳ dữ liệu**.
+- **Ô lưới:** vuông 1 km, mã `G1K-<i>-<j>`. `i`, `j` là chỉ số của `ST_SquareGrid` trong EPSG:32648, nên mã ô không đổi khi mở rộng khung. 165 ô: `i` từ 683 đến 697, `j` từ 1190 đến 1200. Ô nguyên vẹn, không cắt theo ranh giới.
+- **Tuần:** thứ Hai – Chủ nhật, xác định bằng `period_start` (thứ Hai). 26 tuần từ 04/05/2026 đến 01/11/2026. Không tổng hợp lên tháng, vì trung vị của tuần không gộp lên tháng được.
 
-| Thành phần | Trường ứng viên | Nội dung cần làm rõ |
+## Cách tính và tổng hợp KPI
+
+| Nhóm KPI | Giá trị của một ô trong một tuần | Cột cần có |
 | --- | --- | --- |
-| Vùng | `region_id`, `region_name` | Mã ổn định để nối KPI với hình học; loại vùng và phiên bản ranh giới. |
-| Hình học vùng | `region_id`, `geometry` | Polygon/ô lưới được phép sử dụng; định dạng và hệ tọa độ phải được ghi rõ. |
-| Kỳ dữ liệu | `period_start`, `period_end` | Múi giờ, chu kỳ và quy ước tính các mốc biên. |
-| Chỉ số | `kpi_code`, `value`, `unit` | Định nghĩa, đơn vị, cách tính và ý nghĩa giá trị hợp lệ. |
-| Độ đầy đủ | `sample_count`, `data_status` | Số mẫu nếu có; lý do thiếu hoặc không đủ điều kiện công bố. |
-| Nguồn | `source`, `is_synthetic` | Nguồn đo hay mô phỏng; không trộn mà không nhận diện được. |
-| Cập nhật | `updated_at` | Thời điểm cập nhật bản ghi, phân biệt với thời gian đo. |
+| Throughput (Mbps), latency, jitter (ms) | Trung vị các phép đo hợp lệ trong tuần | `value`, `sample_count` |
+| Tỉ lệ (%): packet loss, availability, 2 KPI HTTP | Tổng tử số trong tuần / tổng mẫu số trong tuần × 100 | `value`, `numerator_value`, `denominator_value`, `sample_count` |
 
-Nếu nguồn phân theo nhà cung cấp hoặc công nghệ mạng, phải giữ thông tin phân nhóm cần thiết; chỉ thêm bộ lọc tương ứng khi phạm vi đã được chốt.
+- KPI tỉ lệ phải có tử số và mẫu số, `0 ≤ tử ≤ mẫu`, `mẫu > 0`, và `value = tử / mẫu × 100` (sai lệch tối đa 0,0001). CSDL kiểm bằng trigger.
+- Giá trị phải nằm trong miền hợp lệ của KPI (`valid_min`, `valid_max` trong bảng `kpis`); tỉ lệ từ 0 đến 100.
+- Chỉ so sánh hai tuần của cùng KPI, cùng nguồn.
 
-## Định nghĩa KPI và tổng hợp
+## Thiếu dữ liệu, dữ liệu sai và giá trị 0
 
-- Mỗi KPI cần tên, đơn vị, cách tính, chu kỳ, cách tổng hợp theo vùng/thời gian và hạn chế đo.
-- Tỷ lệ cần biết mẫu số; chỉ số trung bình cần biết số mẫu/trọng số nếu muốn tổng hợp lại.
-- Không lấy trung bình các giá trị trung bình một cách máy móc. Chọn phép tổng hợp theo định nghĩa và thông tin nguồn; nếu thiếu trọng số, ghi rõ hạn chế hoặc chưa tổng hợp.
-- Các vùng và kỳ chỉ được so sánh khi tương thích về định nghĩa KPI, đơn vị, cách đo, độ dài kỳ và phạm vi không gian. Thay đổi ranh giới phải có quy tắc đối chiếu.
-- Khi đổi đơn vị, giữ quy tắc chuyển đổi và kiểm tra bằng ví dụ đối chiếu. Không cộng/trộn các đơn vị khác nhau.
-- Chưa đặt ngưỡng phân loại chất lượng mạng. Cần căn cứ của mentor/nguồn; ngưỡng minh họa phải ghi rõ là phục vụ demo.
+| `status` | `value` | Ý nghĩa |
+| --- | --- | --- |
+| `ok` | Có số, `sample_count > 0` | Đo/sinh được. `0` là giá trị thật, ví dụ 0% mất gói |
+| `missing` | `null` | Không có dữ liệu cho ô và tuần đó |
+| `invalid` | `null` | Có dữ liệu nhưng bị loại; bắt buộc ghi lý do ở `quality_note` |
 
-## Thiếu dữ liệu và giá trị bằng 0
+- Không bao giờ thay dữ liệu thiếu bằng `0`.
+- Ô không có dòng nào trong CSDL cũng được API trả là `missing`.
+- `quality_level` để `null` khi `status` khác `ok` hoặc KPI chưa có ngưỡng.
 
-- `0` chỉ dùng khi đó là giá trị có ý nghĩa hợp lệ của KPI.
-- Thiếu bản ghi hoặc không đo được phải có trạng thái rõ; không thay tự động bằng `0`.
-- Bản đồ, chi tiết và báo cáo phải phân biệt không có dữ liệu, giá trị bằng 0 và dữ liệu bị loại theo quy tắc đã thống nhất.
-- Nếu nguồn không cung cấp số mẫu hoặc lý do thiếu, ghi là không có thông tin; không tự suy diễn.
+## Ngưỡng tốt / trung bình / kém
 
-## Kiểm tra trước khi nhập
+- Lưu trong bảng `kpi_thresholds`, khoảng nửa mở `[min, max)`; mỗi KPI đủ 3 mức, không chồng lấn, không hở, đúng chiều tốt/kém. Kiểm tra bằng `SELECT * FROM v_kpi_threshold_check;`.
+- Mỗi ngưỡng phải ghi căn cứ (`threshold_basis`). Ngưỡng lấy từ quy chuẩn ghi `standard` và tên tài liệu; ngưỡng nhóm tự đề xuất ghi `team_proposed`, không gọi là chuẩn hay ngưỡng của VNPT.
+- Căn cứ ưu tiên: QCVN 34:2022/BTTTT (thay QCVN 34:2019/BTTTT), ITU-T Y.1540. Hiện **chưa có số**.
 
-- Trường bắt buộc, kiểu dữ liệu, đơn vị và giá trị hợp lệ theo định nghĩa KPI.
-- Mã vùng tồn tại và nối đúng với hình học; hình học/hệ tọa độ phù hợp.
-- Thời gian hợp lệ, cùng quy ước múi giờ; phát hiện kỳ chồng lấn hoặc không đầy đủ.
-- Phát hiện bản ghi trùng theo khóa đã thống nhất, gồm các chiều phân nhóm của nguồn; không âm thầm ghi đè.
-- Ghi nhận bản ghi bị từ chối và lý do, tránh bỏ dữ liệu mà người nhập không biết.
+## Định dạng file nhập
 
-## Bộ mẫu và minh chứng cần chuẩn bị
+File CSV UTF-8, một dòng là một KPI của một ô trong một tuần. Mẫu: `backend/data/sample_kpi.csv`.
 
-Sau khi chốt quy ước, tạo bộ mẫu nhỏ có kết quả đối chiếu tính được: nhiều vùng, ít nhất hai kỳ có thể so sánh, giá trị 0 hợp lệ, vùng thiếu dữ liệu và bản ghi lỗi để thử luồng nhập.
+| Cột | Bắt buộc | Ghi chú |
+| --- | --- | --- |
+| `source_code` | Có | Ví dụ `SIM-V1`; nguồn phải có sẵn trong `data_sources` |
+| `region_code` | Có | Ví dụ `G1K-685-1191` |
+| `kpi_code` | Có | Một trong 8 mã KPI |
+| `period_start` | Có | `YYYY-MM-DD`, phải là thứ Hai, nằm trong khoảng của nguồn |
+| `value` | Khi `status = ok` | Để trống khi `missing`/`invalid` |
+| `status` | Có | `ok`, `missing`, `invalid` |
+| `sample_count` | Có | Số nguyên ≥ 0; > 0 khi `ok` |
+| `numerator_value`, `denominator_value` | Với KPI tỉ lệ | Để trống với KPI không phải tỉ lệ |
+| `quality_note` | Khi `invalid` | Lý do loại |
 
-Dữ liệu mô phỏng phải tái tạo được theo hướng dẫn, gắn nhãn rõ trên demo/báo cáo và không dùng để kết luận chất lượng mạng thực tế. Quy mô mẫu, khu vực, KPI và phương pháp tạo hiện chưa được chốt.
+Mỗi bộ (`source_code`, `kpi_code`, `period_start`, `region_code`) chỉ có một dòng. Nạp lại thì cập nhật dòng cũ, không tạo bản trùng. CSDL chặn dòng sai và báo lý do. Chức năng nhập file qua API (`POST /api/v1/imports`) dự kiến làm ở tuần 12.
 
-Lưu mô tả nguồn/quyền sử dụng, từ điển dữ liệu, quy tắc làm sạch/tổng hợp, kết quả kiểm tra và hướng dẫn nhập cùng phiên bản bộ dữ liệu. Dữ liệu hạn chế truy cập lưu tại nơi được phê duyệt, không đính vào minh chứng công khai.
+## Yêu cầu với bộ mô phỏng `SIM-V1`
+
+- Tái lập được: cùng script, cùng seed (`random_seed` trong `data_sources`) cho cùng kết quả.
+- Có cả ô tốt, trung bình, kém; có ô và tuần thiếu dữ liệu, có vài dòng `invalid` để thử luồng hiển thị.
+- Ghi giả định thật sự áp dụng. Ví dụ: khung có một đoạn sông Sài Gòn, các ô chủ yếu là mặt nước nên có ít mẫu hơn.
+- Điền `collection_method`, `assumptions`, `limitations` trước khi dùng cho báo cáo.

@@ -19,12 +19,12 @@ Chi tiết, ngày và lý do ở `docs/DECISIONS.md`. Thiết kế CSDL ở `doc
 - Dữ liệu **mô phỏng**, luôn gắn nhãn `simulated`; không phải số liệu của VNPT.
 - Ngưỡng tốt / trung bình / kém: **chưa có số**. Mỗi ngưỡng phải dẫn căn cứ; ngưỡng nhóm tự đề xuất ghi `team_proposed`, không gọi là chuẩn hay ngưỡng VNPT.
 
-`README.md`, `docs/REQUIREMENTS.md`, `docs/PLAN.md`, `docs/DATA.md` viết ngày 04/11 nên có chỗ đã cũ (2–4 KPI, chưa chọn công nghệ). Khi mâu thuẫn, `docs/DECISIONS.md` và `docs/SCHEMA-V2.1.md` được ưu tiên. Không tự sửa các file cũ nếu An chưa yêu cầu.
+`README.md`, `docs/REQUIREMENTS.md`, `docs/PLAN.md`, `docs/DATA.md`, `docs/MENTOR-QUESTIONS.md` đã cập nhật theo các quyết định trên ngày 18/11. Khi mâu thuẫn, `docs/DECISIONS.md` và `docs/SCHEMA-V2.1.md` được ưu tiên.
 
 ## Cấu trúc repo
 
 ```
-backend/   FastAPI + PostgreSQL/PostGIS (sandbox, giữ lịch sử commit từ 10/11)
+backend/   FastAPI + PostgreSQL/PostGIS, chạy schema V2.1 (giữ lịch sử commit sandbox từ 10/11)
 db/        SQL schema chính thức của nhóm (V2.1)
 docs/      tài liệu nhóm, DECISIONS.md, SCHEMA-V2.1.md, daily/<tên>/
 frontend/  chưa có (Đức)
@@ -33,9 +33,9 @@ data/      chưa có (Vũ); raw/private/generated bị .gitignore
 
 ## Trạng thái Backend
 
-`backend/` vẫn chạy trên **schema nháp** `backend/db/init/01_schema_draft.sql` (3 bảng `region`, `kpi_definition`, `kpi_value`; lưới 3×3 giả lập; 2 KPI mẫu). Việc kế tiếp là chuyển sang V2.1.
+Từ 18/11 `backend/` chạy trên **schema V2.1**: `docker-compose.yml` mount thẳng `../db/N4.6_Database_Schema_V2.1.sql` vào initdb (chỉ chạy khi volume trống). API đọc view `v_kpi_values_classified`. Dữ liệu thử nằm trong nguồn riêng `BE-SAMPLE` (`is_default = FALSE`; 165 ô × 8 KPI × 2 tuần 19/10 và 26/10/2026), không ghi vào `SIM-V1`. Test cố ý dùng các ô: `G1K-690-1195`/latency/26-10 là `missing`, `G1K-683-1190`/latency/26-10 không có dòng, `G1K-697-1200`/packet_loss_rate/19-10 là `invalid`.
 
-API hiện có: `GET /health`, `/health/db`, `/api/v1/kpis`, `/api/v1/regions?simplify=`, `/api/v1/kpi-values?kpi=&period_start=&period_type=&region=`, `/api/v1/regions/{code}/kpis?kpi=&from=&to=`, `/api/v1/compare?kpi=&period_a=&period_b=` (delta = B − A, null nếu một bên thiếu). Dự kiến tuần 12: `POST /imports`, `GET /exports`.
+API hiện có (contract v0.2, `backend/docs/api-contract.md`): `GET /health`, `/health/db`, `/api/v1/kpis`, `/api/v1/regions?simplify=`, `/api/v1/kpi-values?kpi=&period_start=&region=&source=`, `/api/v1/regions/{code}/kpis?kpi=&from=&to=&source=`, `/api/v1/compare?kpi=&period_a=&period_b=&region=&source=` (delta = B − A, null nếu một bên thiếu). `period_type` chỉ nhận `week`; ngày không phải thứ Hai trả 422. Khóa phản hồi: `kpi_code`, `kpi_name`, `region_name`, `region_level`, khối `source` có `data_nature`. Dự kiến tuần 12: `POST /imports`, `GET /exports`.
 
 Công nghệ: PostgreSQL 17 + PostGIS 3.5.2 (image `postgis/postgis:17-3.5`), SRID 4326, FastAPI, SQLAlchemy 2 (sync), GeoAlchemy2, psycopg 3, pydantic-settings, uv, pytest + httpx, ruff, Bruno.
 
@@ -67,6 +67,7 @@ Nạp schema V2.1: `psql -d <db> -v ON_ERROR_STOP=1 -f db/N4.6_Database_Schema_V
 
 - Docker Desktop chưa chạy thì `docker compose` báo lỗi kết nối. Mở Docker Desktop rồi chạy lại; nếu volume bị xóa thì nạp lại dữ liệu mẫu.
 - Docker Compose đặt tên project theo thư mục, nên chạy từ `backend/` của repo này tạo volume mới, khác sandbox cũ ở `D:\University\HKDN\n46-backend-sandbox`. Phải nạp lại dữ liệu.
+- `container_name: n46-postgis` trùng với container của sandbox cũ nên `docker compose up` báo conflict. Xóa container cũ (`docker rm n46-postgis`, volume cũ vẫn giữ) rồi chạy lại.
 - `Set-Content -Encoding utf8` của PowerShell 5 thêm BOM, làm Bruno lỗi "Unexpected token". Ghi UTF-8 không BOM.
 - Console Windows làm vỡ dấu tiếng Việt khi in log; ghi log ra file UTF-8 nếu cần làm minh chứng.
 - TP.HCM bỏ cấp quận từ 01/07/2025 (168 đơn vị cấp xã). Không viết "Quận 1", "Quận 2".
@@ -83,7 +84,7 @@ Nạp schema V2.1: `psql -d <db> -v ON_ERROR_STOP=1 -f db/N4.6_Database_Schema_V
 
 ## Việc đang mở (cập nhật 18/11/2026)
 
-1. Backend chuyển sang schema V2.1: API đọc `v_kpi_values_classified`, thêm `data_nature`, `quality_level`, `source`; cập nhật test, dữ liệu mẫu, `backend/docs/api-contract.md`. Hạn 20/11.
+1. Backend V2.1 đã xong ở local ngày 18/11 (19 test, Bruno 8/8 pass); đưa lên PR #1 và nhờ Đạt review. Kế hoạch đầy đủ ở `docs/PLAN.md`.
 2. Vũ viết script sinh dữ liệu mô phỏng 165 ô × 8 KPI × 26 tuần (~34.000 dòng) và điền phương pháp, giả định vào nguồn `SIM-V1`.
 3. An và Vũ tra ngưỡng 3 mức (QCVN 34:2022/BTTTT; ITU-T Y.1540), nạp `kpi_thresholds`, chạy `SELECT * FROM v_kpi_threshold_check;`.
 4. Gửi Đức `api-contract.md`, `openapi.json`, JSON mẫu; Đức chọn Leaflet hay MapLibre.

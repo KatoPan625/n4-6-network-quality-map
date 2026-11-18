@@ -1,23 +1,23 @@
 # Các quyết định cần mentor xác nhận
 
-Cập nhật: 04/11/2026. Chưa nhận phản hồi mentor; mọi hàng hiện ở trạng thái **Chờ xác nhận**. Người điều phối tổng hợp trao đổi, không tự điền quyết định thay mentor.
+Cập nhật: 18/11/2026. Danh sách câu hỏi lập ngày 04/11. Thầy đã hướng dẫn một phần qua email ngày 17/11; nhóm chốt hướng ngày 18/11 nhưng **thầy chưa xác nhận** các lựa chọn đó. Không ghi "mentor đã duyệt" khi chưa có phản hồi.
 
-| Mã | Nội dung cần hỏi | Ảnh hưởng đến kế hoạch |
-| --- | --- | --- |
-| Q01 | Ai dùng sản phẩm và cần giải quyết câu hỏi phân tích nào? | Ưu tiên chức năng và luồng sử dụng |
-| Q02 | Khu vực thử nghiệm nào; dùng vùng hành chính hay ô lưới? | Dữ liệu địa lý, độ phân giải và quy mô |
-| Q03 | Chọn 2–4 KPI nào; định nghĩa, đơn vị, cách tính, chu kỳ thời gian? | Mô hình dữ liệu, bộ lọc và cách so sánh |
-| Q04 | Có dữ liệu mẫu không, ai cung cấp, khi nào nhận; có mã vùng/ranh giới tương ứng không? | Khảo sát dữ liệu và thiết kế |
-| Q05 | Quy định lưu trữ, chia sẻ, đưa dữ liệu vào repo/demo/báo cáo? | Nơi lưu và quyền truy cập |
-| Q06 | Nếu chưa có dữ liệu thật, dữ liệu công khai/mô phỏng nào được chấp nhận khi đánh giá? | Phương án dự phòng; mô tả đề tài có cho phép mô phỏng |
-| Q07 | Bộ chức năng bản đồ, lọc, chi tiết, so sánh và xuất báo cáo có cần điều chỉnh; định dạng báo cáo nào? | Phạm vi bàn giao |
-| Q08 | Ngưỡng phân loại chất lượng dựa vào nguồn nào; ai duyệt? | Chú giải và cách diễn giải kết quả |
-| Q09 | Phương pháp cơ sở để so sánh tại mốc 28/11 cần làm theo hướng nào? | Báo cáo phân tích/đánh giá |
-| Q10 | Có yêu cầu công nghệ, môi trường chạy và quy mô kiểm thử không? | Chọn giải pháp và kiểm thử hiệu năng |
-| Q11 | Cách đánh giá kết quả, biểu mẫu báo cáo, kênh và lịch trao đổi định kỳ? | Tiến độ, minh chứng và nghiệm thu |
+| Mã | Câu hỏi | Hướng dẫn của thầy (17/11) | Nhóm chọn (18/11) | Trạng thái |
+| --- | --- | --- | --- | --- |
+| Q01 | Ai dùng sản phẩm, cần trả lời câu hỏi phân tích nào? | — | — | Chờ xác nhận |
+| Q02 | Khu vực thử nghiệm; vùng hành chính hay ô lưới? | Phường/xã hoặc lưới 500 m/1 km | Lưới 1 km, khung `HCM-CENTER-NE` 165 ô | Chờ thầy xác nhận lựa chọn |
+| Q03 | KPI nào; định nghĩa, đơn vị, cách tính, chu kỳ? | Khoảng 8–10 KPI; tuần hoặc tháng trong 3–6 tháng | Mạng cố định, 8 KPI, tuần, 26 tuần | Chờ thầy xác nhận lựa chọn |
+| Q04 | Có dữ liệu mẫu không, ai cung cấp, khi nào nhận? | VNPT NET khả năng cao không cung cấp KPI | Dùng dữ liệu mô phỏng | Đã có hướng |
+| Q05 | Quy định lưu trữ, chia sẻ, đưa dữ liệu vào repo/demo/báo cáo? | — | Repo riêng tư; chỉ dữ liệu mô phỏng, tổng hợp theo ô | Chờ xác nhận |
+| Q06 | Dữ liệu công khai/mô phỏng nào được chấp nhận khi đánh giá? | Được dùng mô phỏng hoặc công khai; phải mô tả nguồn, phương pháp, giả định, giới hạn và tách rõ thật/mô phỏng | Bộ mô phỏng `SIM-V1`, gắn nhãn `simulated` | Đã có hướng |
+| Q07 | Chức năng bản đồ, lọc, chi tiết, so sánh, xuất báo cáo có cần điều chỉnh; định dạng báo cáo nào? | — | Giữ đủ chức năng theo mô tả đề tài | Chờ xác nhận |
+| Q08 | Ngưỡng phân loại chất lượng dựa vào nguồn nào; ai duyệt? | Tốt/trung bình/kém có căn cứ ITU, 3GPP, quy chuẩn Việt Nam | QCVN 34:2022/BTTTT, ITU-T Y.1540; ngưỡng tự đề xuất ghi `team_proposed` | Đã có hướng; chưa có số |
+| Q09 | Phương pháp cơ sở để so sánh tại mốc 28/11? | — | — | Chờ xác nhận |
+| Q10 | Yêu cầu công nghệ, môi trường chạy, quy mô kiểm thử? | — | PostgreSQL 17 + PostGIS, FastAPI; Frontend chưa chọn thư viện | Chờ xác nhận |
+| Q11 | Cách đánh giá, biểu mẫu báo cáo, kênh và lịch trao đổi? | — | — | Chờ xác nhận |
+
+Lưu ý: mô tả đề tài gốc ghi 2–4 KPI; nhóm theo hướng dẫn 8–10 KPI của thầy. Cần ghi điểm này vào biên bản tuần 3.
 
 ## Ghi nhận phản hồi
 
-Mỗi quyết định ghi: **Ngày – Mã câu hỏi – Nội dung thống nhất – Người xác nhận – Link biên bản/email – Tài liệu/issue cần cập nhật**.
-
-Nếu chưa có phản hồi trước 14/11: ghi rõ bản phạm vi là đề xuất; tiếp tục khảo sát, phác giao diện và thiết kế dữ liệu mẫu. Không tự coi dữ liệu công khai hoặc ngưỡng tự đặt là đã được duyệt cho nghiệm thu.
+Mỗi phản hồi ghi: **Ngày – Mã câu hỏi – Nội dung thống nhất – Người xác nhận – Link biên bản/email – Tài liệu/issue cần cập nhật**. Quyết định đã chốt chuyển vào [DECISIONS.md](DECISIONS.md). Ảnh email của thầy lưu trong `docs/mentor/`.

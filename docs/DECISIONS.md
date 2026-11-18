@@ -1,6 +1,6 @@
 # Nhật ký quyết định N4.6
 
-Ghi các quyết định đã chốt, theo thứ tự thời gian. Quyết định sau thay thế quyết định trước nếu mâu thuẫn. Các tài liệu viết ngày 04/11 (`README.md`, `docs/REQUIREMENTS.md`, `docs/PLAN.md`, `docs/DATA.md`) chưa cập nhật theo nhật ký này.
+Ghi các quyết định đã chốt, theo thứ tự thời gian. Quyết định sau thay thế quyết định trước nếu mâu thuẫn. Các tài liệu `README.md`, `docs/REQUIREMENTS.md`, `docs/PLAN.md`, `docs/DATA.md` đã cập nhật theo nhật ký này ngày 18/11; nếu còn mâu thuẫn, nhật ký này được ưu tiên.
 
 ## Đang có hiệu lực
 
@@ -17,6 +17,8 @@ Ghi các quyết định đã chốt, theo thứ tự thời gian. Quyết đị
 | 18/11 | Khung nghiên cứu `HCM-CENTER-NE`: 15 × 11 km, từ khu Bến Thành về phía Thủ Đức cũ, 165 ô | Có cả lõi đô thị và vùng ven; đủ lớn để bản đồ có ý nghĩa, nhẹ cho Frontend | An và Đạt |
 | 18/11 | Chu kỳ tuần (thứ Hai – Chủ nhật), 26 tuần từ 04/05/2026 đến 01/11/2026; không tổng hợp lên tháng | 26 điểm mỗi ô đủ vẽ xu hướng; giá trị trung vị của tuần không gộp lên tháng được | Đạt (V2), An và Đạt chốt ngày |
 | 18/11 | Dùng dữ liệu mô phỏng, gắn nhãn `simulated` trong CSDL, API, bản đồ và báo cáo | Chưa có dữ liệu VNPT; theo hướng dẫn của thầy | Đạt (V2) |
+| 18/11 | Backend dùng thẳng file `db/N4.6_Database_Schema_V2.1.sql` khi tạo CSDL; bỏ schema nháp 3 bảng | Một nguồn schema duy nhất, tránh lệch giữa Backend và tài liệu | An |
+| 18/11 | Dữ liệu thử của Backend nằm trong nguồn riêng `BE-SAMPLE` (`is_default = FALSE`), không ghi vào `SIM-V1` | Không trộn dữ liệu test với bộ mô phỏng chính thức của Vũ | An |
 | 18/11 | Schema V2.1: 6 bảng (`study_areas`, `regions`, `kpis`, `kpi_thresholds`, `data_sources`, `kpi_values`) và 2 view | Sửa 12 lỗi của V2, xem mục 0 trong `docs/SCHEMA-V2.1.md` | An đề xuất; An và Đạt chốt khung, 26 tuần, bảng `study_areas`; chờ Đạt duyệt qua PR |
 
 ## Đã bỏ
@@ -35,4 +37,5 @@ Ghi các quyết định đã chốt, theo thứ tự thời gian. Quyết đị
 - Số ngưỡng tốt/trung bình/kém của 8 KPI (An và Vũ, hạn 20/11).
 - Phương pháp và tham số sinh dữ liệu mô phỏng (Vũ).
 - Thư viện bản đồ: Leaflet hay MapLibre (Đức).
+- Hợp đồng API v0.2 (`backend/docs/api-contract.md`): đổi khóa `code` → `kpi_code`, thêm `source`, `data_nature`, `quality_level`; chốt ở họp 21/11.
 - Thầy chưa xác nhận hướng đã chốt ngày 18/11.

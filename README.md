@@ -1,43 +1,38 @@
-# N4.6 — Bản đồ số chất lượng mạng theo khu vực
+# N4.6 — Bản đồ số hiển thị chất lượng mạng theo khu vực
 
-Dự án học kỳ doanh nghiệp UTH – VNPT NET, nhóm 5 thành viên. Xây dựng bản đồ web trực quan hóa KPI mạng đã tổng hợp theo khu vực và thời gian, hỗ trợ lọc, xem chi tiết, so sánh và xuất báo cáo.
+Dự án học kỳ doanh nghiệp UTH – VNPT NET. Nhóm xây dựng bản đồ web hiển thị KPI chất lượng **mạng cố định** (Internet cáp quang) đã tổng hợp theo ô lưới và theo tuần. Bản đồ hỗ trợ lọc, xem chi tiết, so sánh và xuất báo cáo.
 
-**Trạng thái ngày 18/11/2026:** đã chốt mạng cố định, 8 KPI, lưới 1 km, chu kỳ tuần và dữ liệu mô phỏng (xem [nhật ký quyết định](docs/DECISIONS.md)). Backend sandbox nằm trong `backend/`; schema chính thức V2.1 nằm trong `db/`. Mentor chưa xác nhận hướng đã chốt ngày 18/11.
 
-## Đọc trước khi nhận việc
+## Phạm vi đã chốt
 
-| Tài liệu | Nội dung |
+| Mục | Nội dung |
 | --- | --- |
-| [Nhật ký quyết định](docs/DECISIONS.md) | Các quyết định đã chốt, lý do và phương án đã bỏ; ưu tiên hơn tài liệu ngày 04/11 |
-| [Schema V2.1](docs/SCHEMA-V2.1.md) | Thiết kế CSDL, KPI, lưới, chu kỳ, quy tắc dữ liệu; SQL ở `db/` |
-| [Yêu cầu](docs/REQUIREMENTS.md) | Phạm vi, yêu cầu chức năng, tiêu chí kiểm tra và các quyết định còn mở |
-| [Kế hoạch và phân công](docs/PLAN.md) | Vai trò tạm TV1–TV5, việc cần làm tiếp theo, deadline và mốc báo cáo |
-| [Dữ liệu và KPI](docs/DATA.md) | Cách mô tả nguồn dữ liệu, KPI, dữ liệu thiếu và dữ liệu mô phỏng |
-| [Câu hỏi mentor](docs/MENTOR-QUESTIONS.md) | Các điểm cần xác nhận trước khi chốt thiết kế |
-| [Mẫu báo cáo](docs/REPORT-TEMPLATE.md) | Nhật ký cá nhân, biên bản họp, báo cáo nhóm |
-| [Cách làm việc nhóm](CONTRIBUTING.md) | Nhận việc, cập nhật tiến độ, review và hoàn thành |
+| Loại mạng | Cố định (Internet cáp quang). Không dùng RSRP, SINR hay KPI mạng di động khác |
+| KPI (8) | `download_throughput`, `upload_throughput`, `latency`, `jitter`, `packet_loss_rate`, `network_availability`, `http_ip_access_failure_ratio`, `http_dropped_sessions_ratio` |
+| Không gian | Lưới vuông 1 km, khung `HCM-CENTER-NE` 15 × 11 km (khu Bến Thành đến Thủ Đức cũ), 165 ô mã `G1K-<i>-<j>` |
+| Thời gian | Tuần thứ Hai – Chủ nhật, 26 tuần từ 04/05/2026 đến 01/11/2026; không tổng hợp lên tháng |
+| Dữ liệu | Mô phỏng, luôn gắn nhãn `simulated`; **không phải số liệu của VNPT** |
+| Mức chất lượng | Tốt / trung bình / kém. Chưa có số; mỗi ngưỡng phải dẫn căn cứ (QCVN 34:2022/BTTTT, ITU-T Y.1540…). Ngưỡng nhóm tự đề xuất ghi `team_proposed` |
 
-## Kết quả dự kiến
+## Nhóm
 
-- Bản đồ tương tác theo vùng hành chính tổng quát hoặc ô lưới, với 2–4 KPI mẫu.
-- Bộ lọc thời gian/khu vực/KPI; chú giải, đơn vị, thời gian cập nhật và trạng thái thiếu dữ liệu.
-- Chi tiết KPI, so sánh thời gian và báo cáo tổng hợp.
-- Thiết kế dữ liệu/API, dữ liệu demo, hướng dẫn nhập, kiểm thử và báo cáo hạn chế.
+| Thành viên | Vai trò |
+| --- | --- |
+| Đạt | Trưởng nhóm; yêu cầu, schema CSDL, liên lạc mentor |
+| An (`KatoPan625`) | Backend & API |
+| Đức | Frontend bản đồ |
+| Vũ | Dữ liệu mô phỏng, kiểm thử (Data/QA) |
 
-Nguồn yêu cầu: mô tả N4.6 trong `Mo_ta_chi_tiet_16_de_tai_UTH_VNPT_NET_final.docx`; quy trình trong `Quy_trinh_HKDN_UTH_VNPT_NET_v2.docx`; lịch do nhóm cung cấp. Các bản gốc được giữ ngoài repo, chưa đưa lên GitHub.
+## Cấu trúc repo
 
-## Bắt đầu cùng nhóm
+| Thư mục | Nội dung |
+| --- | --- |
+| `backend/` | FastAPI + PostgreSQL 17/PostGIS 3.5.2. Hướng dẫn chạy: [backend/README.md](backend/README.md); hợp đồng API: [backend/docs/api-contract.md](backend/docs/api-contract.md) |
+| `db/` | SQL schema chính thức V2.1 |
+| `docs/` | Thiết kế CSDL (Schema V2.1) và mẫu báo cáo dùng chung |
+| `frontend/` | Chưa có (Đức) |
+| `data/` | Chưa có (Vũ). `data/raw/`, `data/private/`, `data/generated/` không được commit |
 
-1. Chủ repo mời các thành viên trong **Settings → Collaborators**; mỗi người chấp nhận lời mời bằng tài khoản riêng.
-2. Điền tên và tài khoản GitHub vào bảng TV1–TV5 trong kế hoạch, cùng thời gian có thể dành mỗi tuần.
-3. Mỗi người nhận một đầu việc qua Issues, dùng mẫu có sẵn và ghi hạn hoàn thành.
-4. Nộp sản phẩm kèm link minh chứng; người khác kiểm tra trước khi đóng việc.
-5. Rà soát cách chia việc ngày 07/11; hoàn thiện kế hoạch và các điểm chờ mentor trước 14/11.
+## Bảo mật dữ liệu
 
-GitHub Projects là phương án đề xuất để quản lý cùng repo; cấu hình gợi ý nằm trong kế hoạch. Việc có tài liệu này không đồng nghĩa bảng Projects đã được tạo.
-
-## Dữ liệu và công nghệ
-
-CSDL PostgreSQL 17 + PostGIS 3.5.2; Backend FastAPI (Python, quản lý bằng uv). Hướng dẫn chạy Backend ở `backend/README.md`. Frontend chưa chọn thư viện bản đồ.
-
-Giữ repo riêng tư. Chỉ đưa lên dữ liệu đã được phép sử dụng; không đưa mật khẩu, token, tọa độ nhạy cảm hoặc dữ liệu thuê bao vào repo. Quyền công bố mã nguồn và giấy phép cần nhóm/mentor thống nhất trước khi phát hành công khai.
+Giữ repo riêng tư. Không commit `.env`, mật khẩu, token, tọa độ trạm hay dữ liệu thuê bao. API và bản đồ chỉ dùng số liệu tổng hợp theo ô. Quyền công bố mã nguồn và giấy phép cần nhóm và mentor thống nhất trước khi công khai.
