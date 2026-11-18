@@ -1,100 +1,146 @@
-# N4.6 – Hợp đồng API (bản nháp v0.1)
+# N4.6 – Hợp đồng API (bản nháp v0.2)
 
-- Người soạn: An (Backend) · Ngày: 10/11/2026
-- Cập nhật: 10/11/2026 (thêm 3 API đọc, 15 test). Trạng thái: **NHÁP**, gửi Đạt (schema) và Đức (Frontend) góp ý trước buổi thống nhất tuần 3.
-- Swagger sống: chạy backend rồi mở `http://localhost:8000/docs`.
+- Người soạn: An (Backend). Bản v0.1: 10/11/2026. Bản v0.2: 18/11/2026.
+- v0.2 chuyển sang schema V2.1 (`db/N4.6_Database_Schema_V2.1.sql`, `docs/SCHEMA-V2.1.md`). Trạng thái: **NHÁP**, chốt ở buổi họp 21/11.
+- Swagger: chạy backend rồi mở `http://localhost:8000/docs`. Đặc tả máy đọc: `docs/openapi.json`.
+
+## Thay đổi so với v0.1
+
+| Mục | v0.1 | v0.2 |
+|---|---|---|
+| Vùng | Lưới thử 3×3, mã `R-0-0` | Lưới 1 km, 165 ô khung `HCM-CENTER-NE`, mã `G1K-<i>-<j>` |
+| KPI | 2 KPI mẫu (`latency_ms`, `packet_loss_pct`) | 8 KPI mạng cố định, đọc từ bảng `kpis` |
+| Chu kỳ | `day`/`week`/`month`, mặc định `month` | Chỉ `week`; `period_start` phải là thứ Hai |
+| Khóa KPI | `code`, `name` | `kpi_code`, `kpi_name` |
+| Thuộc tính ô | `name`, `level` | `region_name`, `region_level` |
+| Nguồn | Không có | Tham số `source`; mọi phản hồi giá trị có khối `source` kèm `data_nature` |
+| Mức chất lượng | Không có | Mỗi giá trị có `quality_level` và `threshold_type` |
+| `updated_at` | Có trong từng giá trị | Bỏ (view không có cột này) |
 
 ## 1. Quy ước chung
 
 | Quy ước | Nội dung |
 |---|---|
 | Tiền tố | `/api/v1/...` (riêng `/health` không có tiền tố) |
-| Định dạng | JSON UTF-8; bản đồ dùng GeoJSON, hệ tọa độ WGS84 (EPSG:4326) |
-| Mã vùng | `region_code` dạng chuỗi (vd `R-0-0`, sau này là mã huyện/ô lưới) |
-| Thời gian | Ngày ISO 8601 `YYYY-MM-DD`; kỳ gồm `period_type` (`day`/`week`/`month`) + `period_start` |
-| KPI | Đọc danh sách từ `/api/v1/kpis`, **không hard-code** ở Frontend |
-| Thiếu dữ liệu | `value: null` + `status: "missing"`. Giá trị 0 là dữ liệu thật, khác với thiếu |
+| Định dạng | JSON UTF-8; bản đồ dùng GeoJSON WGS84 (EPSG:4326) |
+| Mã trao đổi | `region_code`, `kpi_code`, `source_code`. Không trả khóa tự tăng |
+| Thời gian | Ngày ISO `YYYY-MM-DD`. Một kỳ là một tuần thứ Hai – Chủ nhật, xác định bằng `period_start` (thứ Hai). Kỳ dữ liệu: 04/05/2026 – 01/11/2026 (26 tuần) |
+| KPI | Đọc danh sách từ `/api/v1/kpis`, **không viết cứng** ở Frontend |
+| Nguồn dữ liệu | Tham số `source` (mã nguồn). Bỏ trống thì dùng nguồn `is_default` (hiện là `SIM-V1`) |
+| Nhãn mô phỏng | `source.data_nature = "simulated"` thì Frontend hiện nhãn **"Dữ liệu mô phỏng"** |
+| Thiếu dữ liệu | `value: null` + `status: "missing"`. Giá trị 0 là số đo thật, khác với thiếu |
 | Dữ liệu sai | `value: null` + `status: "invalid"` |
-| Bảo mật | Không trả tọa độ trạm, vị trí thuê bao; chỉ vùng tổng hợp |
-| Lỗi | HTTP status + `{"detail": "..."}` (mặc định FastAPI); xem mục 4 |
+| Mức chất lượng | `quality_level`: `good` / `medium` / `poor`, hoặc `null` khi chưa có ngưỡng hay `status` khác `ok`. `threshold_type`: `standard` hoặc `team_proposed` (ngưỡng nhóm tự đề xuất, không phải chuẩn) |
+| Bảo mật | Không trả tọa độ trạm, vị trí thuê bao; chỉ số liệu tổng hợp theo ô |
+| Lỗi | HTTP status + `{"detail": "..."}`; xem mục 4 |
+| CORS | Chỉ `GET` từ `http://localhost:5173` |
 
 ## 2. Endpoint
 
 | # | Method + Path | Mục đích | Trạng thái |
 |---|---|---|---|
-| 1 | `GET /health` | Backend sống | ✅ Đã có |
-| 2 | `GET /health/db` | Kết nối CSDL + phiên bản PostGIS | ✅ Đã có |
-| 3 | `GET /api/v1/kpis` | Metadata KPI: tên, đơn vị, cách tính | ✅ Đã có |
-| 4 | `GET /api/v1/regions` | Ranh giới vùng (GeoJSON) | ✅ Đã có |
-| 5 | `GET /api/v1/kpi-values` | Giá trị KPI theo vùng/kỳ (tô màu bản đồ) | ✅ Đã có (dữ liệu thử) |
-| 6 | `GET /api/v1/regions/{code}/kpis` | Chi tiết KPI 1 vùng theo thời gian | ✅ Đã có (dữ liệu thử) |
-| 7 | `GET /api/v1/compare` | So sánh 2 kỳ | ✅ Đã có sớm (dữ liệu thử) |
+| 1 | `GET /health` | Backend sống | ✅ |
+| 2 | `GET /health/db` | Kết nối CSDL + phiên bản PostGIS | ✅ |
+| 3 | `GET /api/v1/kpis` | Danh mục KPI | ✅ V2.1 |
+| 4 | `GET /api/v1/regions` | Ranh giới ô lưới (GeoJSON) | ✅ V2.1 |
+| 5 | `GET /api/v1/kpi-values` | Giá trị 1 KPI của mọi ô trong 1 tuần (tô màu bản đồ) | ✅ V2.1 |
+| 6 | `GET /api/v1/regions/{code}/kpis` | Chuỗi thời gian KPI của 1 ô | ✅ V2.1 |
+| 7 | `GET /api/v1/compare` | So sánh 2 tuần | ✅ V2.1 |
 | 8 | `POST /api/v1/imports` | Nhập file dữ liệu | 📝 Tuần 12 |
 | 9 | `GET /api/v1/exports` | Xuất báo cáo tổng hợp | 📝 Tuần 12 |
 
 ## 3. Chi tiết và JSON mẫu
 
-### 3.1 `GET /api/v1/kpis` ✅
+JSON mẫu dưới đây lấy từ nguồn thử `BE-SAMPLE` của Backend (giá trị ngẫu nhiên, chỉ để test).
+
+### 3.1 `GET /api/v1/kpis`
+Trả 8 KPI đang dùng, theo `display_order`.
 ```json
 [
-  {"code": "latency_ms", "name": "Do tre (mau)", "unit": "ms",
-   "description": "Cách tính chờ mentor chốt", "higher_is_better": false}
+  {"kpi_code": "latency", "kpi_name": "Latency (RTT)", "kpi_group": "internet_performance",
+   "unit": "ms", "higher_is_better": false, "is_ratio": false, "valid_min": 0.0, "valid_max": null,
+   "description": "...", "calculation_method": "...", "aggregation_method": "Trung vi cac phep do hop le trong tuan.",
+   "reference_name": "ITU-T Y.1540 (IPTD)", "display_order": 3}
 ]
 ```
-`higher_is_better` để Frontend biết đảo thang màu (độ trễ thấp = tốt, thông lượng cao = tốt).
+`higher_is_better` để Frontend biết đảo thang màu (độ trễ thấp là tốt, thông lượng cao là tốt).
 
-### 3.2 `GET /api/v1/regions?simplify=0` ✅
-- `simplify` (0–0.01 độ): đơn giản hóa ranh giới để giảm dung lượng. Mặc định 0.
+### 3.2 `GET /api/v1/regions?simplify=0`
+- `simplify` (0–0.01 độ): đơn giản hóa ranh giới. Mặc định 0. Ô lưới vuông nên thường không cần.
 ```json
 {"type": "FeatureCollection", "features": [
-  {"type": "Feature", "id": "R-0-0",
-   "properties": {"region_code": "R-0-0", "name": "O luoi 0-0", "level": "grid"},
-   "geometry": {"type": "MultiPolygon", "coordinates": [[[[106.6, 10.7], "..."]]]}}
+  {"type": "Feature", "id": "G1K-683-1190",
+   "properties": {"region_code": "G1K-683-1190", "region_name": "O 683-1190", "region_level": "grid_1km"},
+   "geometry": {"type": "MultiPolygon", "coordinates": [[[[106.69, 10.76], "..."]]]}}
 ]}
 ```
-Geometry luôn là `MultiPolygon` để Frontend xử lý một kiểu duy nhất.
+Geometry luôn là `MultiPolygon`.
 
-### 3.3 `GET /api/v1/kpi-values` ✅
-Tham số: `kpi` (bắt buộc), `period_type` (mặc định `month`), `period_start` (bắt buộc), `region` (tùy chọn, lặp được).
+### 3.3 `GET /api/v1/kpi-values`
+Tham số: `kpi` (bắt buộc), `period_start` (bắt buộc, thứ Hai), `period_type` (chỉ `week`, mặc định `week`), `region` (tùy chọn, lặp được), `source` (tùy chọn).
+
+Ví dụ: `/api/v1/kpi-values?kpi=packet_loss_rate&period_start=2026-10-19&source=BE-SAMPLE&region=G1K-684-1190&region=G1K-697-1200`
 ```json
 {
-  "kpi": {"code": "latency_ms", "unit": "ms"},
-  "period": {"type": "month", "start": "2026-10-01"},
+  "kpi": {"kpi_code": "packet_loss_rate", "unit": "%", "higher_is_better": false},
+  "source": {"source_code": "BE-SAMPLE", "source_name": "Du lieu thu cua Backend", "data_nature": "simulated"},
+  "period": {"type": "week", "start": "2026-10-19"},
   "items": [
-    {"region_code": "R-0-0", "value": 42.5, "status": "ok", "updated_at": "2026-11-01T00:00:00Z"},
-    {"region_code": "R-1-1", "value": null, "status": "missing", "updated_at": "2026-11-01T00:00:00Z"}
+    {"region_code": "G1K-684-1190", "value": 1.214629, "status": "ok", "sample_count": 133,
+     "quality_level": null, "threshold_type": null},
+    {"region_code": "G1K-697-1200", "value": null, "status": "invalid", "sample_count": 66,
+     "quality_level": null, "threshold_type": null}
   ]
 }
 ```
-Frontend ghép `items` với `/regions` qua `region_code` (tách hình và số liệu để không tải lại ranh giới mỗi lần đổi bộ lọc).
+- Mọi ô đều có mặt trong `items`. Ô không có dòng dữ liệu trả `value: null`, `status: "missing"`, `sample_count: 0`.
+- `quality_level` đang `null` vì bảng `kpi_thresholds` chưa có số ngưỡng (An và Vũ đang tra). Khi nạp ngưỡng, API tự trả mức mà không cần sửa code.
+- Frontend ghép `items` với `/regions` qua `region_code`, để không tải lại ranh giới mỗi lần đổi bộ lọc.
 
-### 3.4 `GET /api/v1/regions/{code}/kpis` ✅
-Tham số: `kpi` (tùy chọn), `from`, `to`. Trả chuỗi thời gian cho màn hình chi tiết.
+### 3.4 `GET /api/v1/regions/{code}/kpis`
+Tham số: `kpi`, `from`, `to`, `period_type`, `source` (đều tùy chọn).
+```json
+{
+  "region_code": "G1K-690-1195",
+  "source": {"source_code": "BE-SAMPLE", "source_name": "...", "data_nature": "simulated"},
+  "period_type": "week",
+  "kpis": [
+    {"kpi_code": "latency", "kpi_name": "Latency (RTT)", "unit": "ms", "series": [
+      {"period_start": "2026-10-19", "value": 44.6, "status": "ok", "sample_count": 72,
+       "quality_level": null, "threshold_type": null},
+      {"period_start": "2026-10-26", "value": null, "status": "missing", "sample_count": 0,
+       "quality_level": null, "threshold_type": null}
+    ]}
+  ]
+}
+```
+`series` chỉ có các tuần có dòng trong CSDL; tuần không có dòng nào không xuất hiện.
 
-### 3.5 `GET /api/v1/compare` ✅
-Tham số: `kpi`, `period_type`, `period_a`, `period_b`, `region` (tùy chọn).
-Mỗi vùng trả `value_a`, `value_b`, `delta`; `delta = null` nếu một trong hai kỳ thiếu dữ liệu.
+### 3.5 `GET /api/v1/compare`
+Tham số: `kpi`, `period_a`, `period_b` (đều là thứ Hai), `period_type`, `region`, `source`.
+Mỗi ô trả `value_a`, `status_a`, `quality_level_a`, `value_b`, `status_b`, `quality_level_b`, `delta`.
+`delta = value_b − value_a`, làm tròn 4 chữ số; `null` nếu một trong hai tuần thiếu dữ liệu.
 
 ### 3.6 Nhập/xuất 📝
-Định dạng file nhập (CSV cột như `data/sample_kpi.csv`?) và định dạng xuất (CSV/XLSX/PDF) chờ chốt với Data/QA và mentor.
+File nhập dự kiến theo cột của `data/sample_kpi.csv`: `source_code, region_code, kpi_code, period_start, value, status, sample_count, numerator_value, denominator_value, quality_note`. KPI tỉ lệ (`%`) bắt buộc có tử số, mẫu số và `value = tử / mẫu × 100`; CSDL kiểm bằng trigger. Định dạng xuất chờ chốt với Vũ và mentor.
 
 ## 4. Mã lỗi
 
 | HTTP | Khi nào |
 |---|---|
-| 400/422 | Tham số sai (KPI không tồn tại, ngày sai định dạng) |
-| 404 | Không có vùng/KPI theo mã |
-| 503 | Mất kết nối CSDL |
+| 404 | Không có KPI, ô hoặc nguồn theo mã; chưa có nguồn mặc định |
+| 422 | Sai định dạng ngày, `period_type` khác `week`, ngày không phải thứ Hai, `from > to` |
+| 503 | Mất kết nối CSDL (`/health/db`) |
 
-## 5. Câu hỏi cần thống nhất (tuần 3)
+## 5. Câu hỏi cần thống nhất ngày 21/11
 
-1. **Đạt:** cấu trúc 3 bảng `region`, `kpi_definition`, `kpi_value` trong `db/init/01_schema_draft.sql` có hợp với schema dự kiến không?
-2. **Đức:** tách `/regions` (hình) và `/kpi-values` (số) như mục 3.3 có tiện cho Leaflet/MapLibre không? Cần thêm trường nào?
-3. **Vũ:** file dữ liệu nhập dùng CSV dạng cột như `data/sample_kpi.csv` được không?
-4. **Mentor:** danh sách KPI, cách tính, ngưỡng tốt/chưa tốt, mức chi tiết vùng, chu kỳ cập nhật.
+1. **Đức:** dùng khối `source.data_nature` để hiện nhãn "Dữ liệu mô phỏng" và `quality_level` + `threshold_type` cho chú giải có ổn không? Có cần endpoint `GET /api/v1/sources` để chọn nguồn không?
+2. **Đức:** đổi khóa `code` → `kpi_code`, `name` → `kpi_name`/`region_name` có ảnh hưởng gì không? Hiện Frontend chưa dùng nên đổi lúc này không tốn công.
+3. **Vũ:** file nhập theo cột ở mục 3.6 có tiện cho script sinh dữ liệu `SIM-V1` không?
+4. **Đạt:** duyệt schema V2.1 trong PR để Backend giữ nguyên file SQL chung.
 
 ## 6. Công cụ kèm theo
 
-- `docs/openapi.json`: đặc tả máy đọc được (`uv run python scripts/export_openapi.py`).
-- `bruno/`: 8 request mẫu có test, mở bằng Bruno hoặc chạy `npx @usebruno/cli run --env local` trong thư mục `bruno`.
-- `scripts/bench_api.py`: đo p50/p95 ở quy mô lab, chỉ là baseline, không phải chỉ tiêu nghiệm thu.
+- Dữ liệu thử: `uv run python scripts/make_sample_data.py` rồi `uv run python scripts/load_sample.py`. Nạp vào nguồn riêng `BE-SAMPLE` (`is_default = FALSE`), không đụng `SIM-V1`.
+- `bruno/`: 8 request mẫu có test, chạy `npx @usebruno/cli run --env local` trong thư mục `bruno`.
+- `scripts/bench_api.py`: đo p50/p95 ở quy mô lab, chỉ là baseline.

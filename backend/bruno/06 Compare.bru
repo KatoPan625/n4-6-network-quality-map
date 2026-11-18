@@ -5,7 +5,7 @@ meta {
 }
 
 get {
-  url: {{baseUrl}}/api/v1/compare?kpi=latency_ms&period_a=2026-09-01&period_b=2026-10-01
+  url: {{baseUrl}}/api/v1/compare?kpi=latency&period_a=2026-10-19&period_b=2026-10-26&source=BE-SAMPLE
   body: none
   auth: none
 }
@@ -13,6 +13,6 @@ get {
 tests {
   test("status 200", function() {
     expect(res.getStatus()).to.equal(200);
-    expect(res.getBody().items.length).to.equal(9);
+    expect(res.getBody().items.length).to.equal(165);
   });
 }

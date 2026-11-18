@@ -11,11 +11,11 @@ $reqs = @(
   @("01 Health DB",       "/health/db",   200, 'expect(res.getBody().status).to.equal("ok");'),
   @("02 KPI list",        "/api/v1/kpis", 200, 'expect(res.getBody().length).to.be.above(0);'),
   @("03 Regions GeoJSON", "/api/v1/regions", 200, 'expect(res.getBody().type).to.equal("FeatureCollection");'),
-  @("04 KPI values",      "/api/v1/kpi-values?kpi=latency_ms&period_start=2026-10-01", 200, 'expect(res.getBody().items.length).to.equal(9);'),
-  @("05 Region detail",   "/api/v1/regions/R-1-1/kpis", 200, 'expect(res.getBody().kpis.length).to.be.above(0);'),
-  @("06 Compare",         "/api/v1/compare?kpi=latency_ms&period_a=2026-09-01&period_b=2026-10-01", 200, 'expect(res.getBody().items.length).to.equal(9);'),
-  @("07 Unknown KPI 404", "/api/v1/kpi-values?kpi=khong_co&period_start=2026-10-01", 404, ''),
-  @("08 Bad date 422",    "/api/v1/kpi-values?kpi=latency_ms&period_start=10-2026", 422, '')
+  @("04 KPI values",      "/api/v1/kpi-values?kpi=latency&period_start=2026-10-26&source=BE-SAMPLE", 200, 'expect(res.getBody().items.length).to.equal(165); expect(res.getBody().source.data_nature).to.equal("simulated");'),
+  @("05 Region detail",   "/api/v1/regions/G1K-690-1195/kpis?source=BE-SAMPLE", 200, 'expect(res.getBody().kpis.length).to.be.above(0);'),
+  @("06 Compare",         "/api/v1/compare?kpi=latency&period_a=2026-10-19&period_b=2026-10-26&source=BE-SAMPLE", 200, 'expect(res.getBody().items.length).to.equal(165);'),
+  @("07 Unknown KPI 404", "/api/v1/kpi-values?kpi=khong_co&period_start=2026-10-26", 404, ''),
+  @("08 Bad date 422",    "/api/v1/kpi-values?kpi=latency&period_start=10-2026", 422, '')
 )
 $i = 0
 foreach ($r in $reqs) {

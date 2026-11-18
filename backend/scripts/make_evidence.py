@@ -36,16 +36,26 @@ def page(name: str, title: str, sub: str, body: str, width: int, height: int) ->
     )
     out = EV / f"{DAY}_{name}.png"
     subprocess.run(
-        [EDGE, "--headless=new", "--disable-gpu", "--hide-scrollbars",
-         f"--window-size={width},{height}", f"--screenshot={out}", src.as_uri()],
-        check=True, capture_output=True,
+        [
+            EDGE,
+            "--headless=new",
+            "--disable-gpu",
+            "--hide-scrollbars",
+            f"--window-size={width},{height}",
+            f"--screenshot={out}",
+            src.as_uri(),
+        ],
+        check=True,
+        capture_output=True,
     )
     print("Da tao", out.name)
 
 
 def log_page(name: str, title: str, log_file: str, tail: int | None = None) -> None:
     raw = (EV / log_file).read_bytes()
-    text = raw.decode("utf-16") if raw[:2] in (b"\xff\xfe", b"\xfe\xff") else raw.decode("utf-8-sig")
+    text = (
+        raw.decode("utf-16") if raw[:2] in (b"\xff\xfe", b"\xfe\xff") else raw.decode("utf-8-sig")
+    )
     lines = text.rstrip().splitlines()[-tail:] if tail else text.rstrip().splitlines()
     body = f"<pre>{html.escape(chr(10).join(lines))}</pre>"
     page(name, title, f"Nguon: evidence/{log_file} - {DAY}", body, 1100, 120 + 19 * len(lines))
@@ -58,7 +68,7 @@ def color(v: float, lo: float, hi: float, higher_is_better: bool) -> str:
 
 
 def grid_preview(client: httpx.Client) -> None:
-    params = {"kpi": "latency_ms", "period_start": "2026-10-01"}
+    params = {"kpi": "latency", "period_start": "2026-10-26", "source": "BE-SAMPLE"}
     regions = client.get("/api/v1/regions").json()["features"]
     kv = client.get("/api/v1/kpi-values", params=params).json()
     vals = {i["region_code"]: i for i in kv["items"]}
@@ -91,25 +101,43 @@ def grid_preview(client: httpx.Client) -> None:
         "<defs><pattern id='hatch' width='8' height='8' patternUnits='userSpaceOnUse' "
         "patternTransform='rotate(45)'><rect width='8' height='8' fill='#e5e7eb'/>"
         "<line x1='0' y1='0' x2='0' y2='8' stroke='#9ca3af' stroke-width='3'/></pattern></defs>"
-        + "".join(shapes) + "</svg>"
+        + "".join(shapes)
+        + "</svg>"
     )
     legend = (
         "<p class='sub' style='margin-top:10px'>Xanh = do tre thap (tot), do = cao. "
         "Gach cheo = thieu du lieu (API tra null + status missing, khong phai 0).</p>"
     )
-    page("e2e_grid_preview", "Kiem tra luong CSDL -> API: latency_ms, thang 10/2026",
-         "Anh kiem tra du lieu cua Backend (khong phai giao dien Frontend). Du lieu thu, luoi gia lap.",
-         svg + legend, 560, 720)
+    page(
+        "e2e_grid_preview",
+        "Kiem tra luong CSDL -> API: latency, tuan 26/10/2026",
+        "Anh kiem tra du lieu cua Backend (khong phai giao dien Frontend). Du lieu thu BE-SAMPLE, luoi 1 km.",
+        svg + legend,
+        560,
+        720,
+    )
 
 
 def json_page(client: httpx.Client) -> None:
-    res = client.get("/api/v1/kpi-values",
-                     params={"kpi": "latency_ms", "period_start": "2026-10-01",
-                             "region": ["R-0-0", "R-1-1"]})
+    res = client.get(
+        "/api/v1/kpi-values",
+        params={
+            "kpi": "latency",
+            "period_start": "2026-10-26",
+            "source": "BE-SAMPLE",
+            "region": ["G1K-684-1190", "G1K-690-1195"],
+        },
+    )
     body = json.dumps(res.json(), indent=2, ensure_ascii=False)
     url = str(res.request.url).replace(BASE, "")
-    page("api_kpi_values_missing", f"GET {url}", f"HTTP {res.status_code} - R-1-1 thieu du lieu",
-         f"<pre>{html.escape(body)}</pre>", 1000, 120 + 19 * len(body.splitlines()))
+    page(
+        "api_kpi_values_missing",
+        f"GET {url}",
+        f"HTTP {res.status_code} - G1K-690-1195 thieu du lieu",
+        f"<pre>{html.escape(body)}</pre>",
+        1000,
+        120 + 19 * len(body.splitlines()),
+    )
 
 
 def main() -> None:
@@ -118,9 +146,18 @@ def main() -> None:
         grid_preview(client)
         json_page(client)
     subprocess.run(
-        [EDGE, "--headless=new", "--disable-gpu", "--hide-scrollbars", "--window-size=1400,1150",
-         "--virtual-time-budget=8000", f"--screenshot={EV / f'{DAY}_swagger_docs.png'}",
-         f"{BASE}/docs"], check=True, capture_output=True,
+        [
+            EDGE,
+            "--headless=new",
+            "--disable-gpu",
+            "--hide-scrollbars",
+            "--window-size=1400,1150",
+            "--virtual-time-budget=8000",
+            f"--screenshot={EV / f'{DAY}_swagger_docs.png'}",
+            f"{BASE}/docs",
+        ],
+        check=True,
+        capture_output=True,
     )
     print("Da tao", f"{DAY}_swagger_docs.png")
     log_page("pytest", "Kiem thu tu dong: uv run pytest -v", "pytest_run.txt")

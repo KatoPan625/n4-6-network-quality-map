@@ -280,7 +280,7 @@ Ràng buộc: UNIQUE (kpi_id, quality_level); EXCLUDE chặn hai khoảng chồn
 
 ## 6.2. Kết quả chạy thử
 
-Đã chạy toàn bộ file SQL trên PostgreSQL 16 + PostGIS 3.4.2 (các hàm dùng đều có từ PostGIS 3.1, chạy được trên bản 17 + 3.5.2 của nhóm; Backend sẽ chạy lại trên sandbox chính thức).
+Đã chạy toàn bộ file SQL trên PostgreSQL 16 + PostGIS 3.4.2 (các hàm dùng đều có từ PostGIS 3.1, chạy được trên bản 17 + 3.5.2 của nhóm; Backend sẽ chạy lại trên sandbox chính thức). Ngày 18/11 Backend đã chạy lại toàn bộ file trên PostgreSQL 17 + PostGIS 3.5.2: sinh đủ 165 ô (`G1K-683-1190` đến `G1K-697-1200`), 8 KPI, nguồn `SIM-V1`.
 
 - Tạo đủ 6 bảng, 2 view, 1 trigger. Sinh 165 ô, tổng diện tích đúng 165 km², tất cả hợp lệ và là MultiPolygon.
 - Ô G1K-685-1191 chứa chợ Bến Thành; ô G1K-693-1199 nằm ở Thủ Đức cũ.
@@ -297,7 +297,7 @@ Chạy: `psql -d <db> -v ON_ERROR_STOP=1 -f N4.6_Database_Schema_V2.1.sql`
 
 ## 7.1. Thứ tự triển khai
 
-1. Backend (An): chạy SQL trên sandbox; chuyển API sang `v_kpi_values_classified`, thêm `data_nature` và `quality_level` vào phản hồi, thêm tham số `source` (mặc định nguồn `is_default`).
+1. Backend (An) — **xong 18/11**: chạy SQL trên sandbox; chuyển API sang `v_kpi_values_classified`, thêm `data_nature` và `quality_level` vào phản hồi, thêm tham số `source` (mặc định nguồn `is_default`).
 2. Data/QA (Vũ): viết script sinh dữ liệu cho 165 ô × 8 KPI × 26 tuần (~34.000 dòng), điền phương pháp và giả định vào `SIM-V1`.
 3. An + Vũ: tra cứu ngưỡng, nạp `kpi_thresholds`, chạy `v_kpi_threshold_check`.
 4. Leader (Đạt): rà soát KPI, đơn vị, nguồn, ngưỡng; cập nhật tài liệu khi có góp ý.

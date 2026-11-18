@@ -15,11 +15,26 @@ import httpx
 BASE = "http://localhost:8000"
 CASES = [
     ("GET /api/v1/regions", "/api/v1/regions", {}),
-    ("GET /api/v1/kpi-values", "/api/v1/kpi-values",
-     {"kpi": "latency_ms", "period_start": "2026-10-01"}),
-    ("GET /api/v1/regions/{code}/kpis", "/api/v1/regions/R-1-1/kpis", {}),
-    ("GET /api/v1/compare", "/api/v1/compare",
-     {"kpi": "latency_ms", "period_a": "2026-09-01", "period_b": "2026-10-01"}),
+    (
+        "GET /api/v1/kpi-values",
+        "/api/v1/kpi-values",
+        {"kpi": "latency", "period_start": "2026-10-26", "source": "BE-SAMPLE"},
+    ),
+    (
+        "GET /api/v1/regions/{code}/kpis",
+        "/api/v1/regions/G1K-690-1195/kpis",
+        {"source": "BE-SAMPLE"},
+    ),
+    (
+        "GET /api/v1/compare",
+        "/api/v1/compare",
+        {
+            "kpi": "latency",
+            "period_a": "2026-10-19",
+            "period_b": "2026-10-26",
+            "source": "BE-SAMPLE",
+        },
+    ),
 ]
 
 
@@ -31,7 +46,9 @@ def pct(data: list[float], p: float) -> float:
 def main() -> None:
     n = int(sys.argv[1]) if len(sys.argv) > 1 else 100
     print(f"Baseline API - {datetime.now():%Y-%m-%d %H:%M} - {platform.node()} - {n} lan/endpoint")
-    print("Du lieu: luoi 3x3, 2 KPI, 2 ky (du lieu thu). Server local, 1 worker, 1 client.\n")
+    print(
+        "Du lieu: 165 o 1 km, 8 KPI, 2 tuan (nguon BE-SAMPLE). Server local, 1 worker, 1 client.\n"
+    )
     print(f"{'Endpoint':34} {'p50 ms':>8} {'p95 ms':>8} {'max ms':>8} {'loi':>4}")
     with httpx.Client(base_url=BASE, timeout=10) as client:
         for name, path, params in CASES:
@@ -42,8 +59,10 @@ def main() -> None:
                 res = client.get(path, params=params)
                 times.append((time.perf_counter() - t0) * 1000)
                 errors += res.status_code != 200
-            print(f"{name:34} {statistics.median(times):8.1f} {pct(times, 0.95):8.1f} "
-                  f"{max(times):8.1f} {errors:4d}")
+            print(
+                f"{name:34} {statistics.median(times):8.1f} {pct(times, 0.95):8.1f} "
+                f"{max(times):8.1f} {errors:4d}"
+            )
 
 
 if __name__ == "__main__":

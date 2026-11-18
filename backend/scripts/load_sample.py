@@ -1,10 +1,11 @@
-"""Nap du lieu thu (data/) vao PostGIS. Chay lai nhieu lan khong bi trung (upsert).
+"""Nap du lieu thu (data/sample_kpi.csv) vao CSDL schema V2.1. Chay lai nhieu lan khong trung (upsert).
 
+O luoi, KPI va nguon SIM-V1 da co san tu file schema. Script nay chi them nguon BE-SAMPLE
+(is_default = FALSE, khong dung chung voi SIM-V1 cua Vu) va gia tri KPI cua nguon do.
 Chay: uv run python scripts/load_sample.py
 """
 
 import csv
-import json
 import sys
 from pathlib import Path
 
@@ -15,46 +16,50 @@ from app.config import settings
 
 DATA = Path(__file__).resolve().parent.parent / "data"
 
-KPI_DEFS = [
-    ("latency_ms", "Do tre (mau)", "ms", "Gia tri mau, cach tinh cho mentor chot", False),
-    ("packet_loss_pct", "Ty le mat goi (mau)", "%", "Gia tri mau, cach tinh cho mentor chot", False),
-]
+SOURCE_SQL = """
+INSERT INTO data_sources (source_code, source_name, source_type, data_nature, description,
+    spatial_scope, period_from, period_to, collection_method, method_version, random_seed,
+    assumptions, limitations, is_default)
+VALUES ('BE-SAMPLE', 'Du lieu thu cua Backend', 'simulation', 'simulated',
+    'Gia tri ngau nhien deu de test API; 2 tuan cuoi ky.',
+    'Khung HCM-CENTER-NE, luoi 1 km.', DATE '2026-05-04', DATE '2026-11-01',
+    'scripts/make_sample_data.py: random.uniform trong khoang co dinh moi KPI.', 'be-sample-1', 46,
+    'Khong co gia dinh nghiep vu; chi de kiem thu.',
+    'Chi dung de test Backend; khong dung de ve ban do hay bao cao.', FALSE)
+ON CONFLICT (source_code) DO NOTHING
+"""
+
+VALUE_SQL = """
+INSERT INTO kpi_values (source_id, region_id, kpi_id, period_start, value, status, sample_count,
+    numerator_value, denominator_value, quality_note)
+SELECT s.source_id, r.region_id, k.kpi_id, %(period_start)s, %(value)s, %(status)s,
+    %(sample_count)s, %(numerator_value)s, %(denominator_value)s, %(quality_note)s
+FROM data_sources s, regions r, kpis k
+WHERE s.source_code = %(source_code)s AND r.region_code = %(region_code)s
+  AND k.kpi_code = %(kpi_code)s
+ON CONFLICT (source_id, kpi_id, period_start, region_id) DO UPDATE SET
+    value = EXCLUDED.value, status = EXCLUDED.status, sample_count = EXCLUDED.sample_count,
+    numerator_value = EXCLUDED.numerator_value, denominator_value = EXCLUDED.denominator_value,
+    quality_note = EXCLUDED.quality_note
+"""
 
 
 def main() -> None:
     dsn = settings.database_url.replace("postgresql+psycopg", "postgresql")
-    grid = json.loads((DATA / "sample_grid.geojson").read_text(encoding="utf-8"))
+    with open(DATA / "sample_kpi.csv", encoding="utf-8") as fh:
+        # o trong trong CSV -> NULL
+        rows = [{k: (v or None) for k, v in r.items()} for r in csv.DictReader(fh)]
     with psycopg.connect(dsn) as conn, conn.cursor() as cur:
-        for f in grid["features"]:
-            p = f["properties"]
-            cur.execute(
-                "INSERT INTO region (region_code, name, level, geom) "
-                "VALUES (%s, %s, %s, ST_SetSRID(ST_GeomFromGeoJSON(%s), 4326)) "
-                "ON CONFLICT (region_code) DO UPDATE SET name = EXCLUDED.name, "
-                "level = EXCLUDED.level, geom = EXCLUDED.geom",
-                (p["region_code"], p["name"], p["level"], json.dumps(f["geometry"])),
-            )
-        cur.executemany(
-            "INSERT INTO kpi_definition VALUES (%s, %s, %s, %s, %s) "
-            "ON CONFLICT (code) DO UPDATE SET name = EXCLUDED.name, unit = EXCLUDED.unit, "
-            "description = EXCLUDED.description, higher_is_better = EXCLUDED.higher_is_better",
-            KPI_DEFS,
+        cur.execute(SOURCE_SQL)
+        cur.executemany(VALUE_SQL, rows)
+        cur.execute(
+            "SELECT count(*) FROM kpi_values v JOIN data_sources s USING (source_id) "
+            "WHERE s.source_code = 'BE-SAMPLE'"
         )
-        with open(DATA / "sample_kpi.csv", encoding="utf-8") as fh:
-            rows = list(csv.DictReader(fh))
-        cur.executemany(
-            "INSERT INTO kpi_value (region_code, kpi_code, period_type, period_start, "
-            "value, status, source) VALUES (%s, %s, %s, %s, %s, %s, %s) "
-            "ON CONFLICT (region_code, kpi_code, period_type, period_start) DO UPDATE SET "
-            "value = EXCLUDED.value, status = EXCLUDED.status, source = EXCLUDED.source, "
-            "updated_at = now()",
-            [
-                (r["region_code"], r["kpi_code"], r["period_type"], r["period_start"],
-                 float(r["value"]) if r["value"] else None, r["status"], r["source"])
-                for r in rows
-            ],
-        )
-    print(f"Da nap {len(grid['features'])} vung, {len(KPI_DEFS)} KPI, {len(rows)} gia tri")
+        loaded = cur.fetchone()[0]
+    if loaded != len(rows):  # ma o/KPI trong CSV khong khop CSDL thi SELECT tren tra 0 dong
+        sys.exit(f"Loi: CSV co {len(rows)} dong nhung CSDL chi co {loaded} dong cua BE-SAMPLE")
+    print(f"Da nap {loaded} gia tri KPI cho nguon BE-SAMPLE")
 
 
 if __name__ == "__main__":

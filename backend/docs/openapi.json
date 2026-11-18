@@ -3,7 +3,7 @@
   "info": {
     "title": "N4.6 - Network Quality Map API (sandbox)",
     "description": "Ban thu cua Backend. Hop dong API chinh thuc: docs/api-contract.md",
-    "version": "0.1.0"
+    "version": "0.2.0"
   },
   "paths": {
     "/api/v1/kpi-values": {
@@ -12,7 +12,7 @@
           "kpi"
         ],
         "summary": "Kpi Values",
-        "description": "Gia tri 1 KPI cua moi vung trong 1 ky - dung de to mau ban do.",
+        "description": "Gia tri 1 KPI cua moi o trong 1 tuan - dung de to mau ban do.",
         "operationId": "kpi_values_api_v1_kpi_values_get",
         "parameters": [
           {
@@ -39,13 +39,9 @@
             "in": "query",
             "required": false,
             "schema": {
-              "enum": [
-                "day",
-                "week",
-                "month"
-              ],
+              "const": "week",
               "type": "string",
-              "default": "month",
+              "default": "week",
               "title": "Period Type"
             }
           },
@@ -65,10 +61,28 @@
                   "type": "null"
                 }
               ],
-              "description": "Loc theo ma vung, lap duoc",
+              "description": "Loc theo ma o, lap duoc",
               "title": "Region"
             },
-            "description": "Loc theo ma vung, lap duoc"
+            "description": "Loc theo ma o, lap duoc"
+          },
+          {
+            "name": "source",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Ma nguon du lieu; bo trong = nguon mac dinh (is_default)",
+              "title": "Source"
+            },
+            "description": "Ma nguon du lieu; bo trong = nguon mac dinh (is_default)"
           }
         ],
         "responses": {
@@ -103,7 +117,7 @@
           "kpi"
         ],
         "summary": "Region Kpis",
-        "description": "Chuoi thoi gian KPI cua 1 vung - dung cho man hinh chi tiet.",
+        "description": "Chuoi thoi gian KPI cua 1 o - dung cho man hinh chi tiet.",
         "operationId": "region_kpis_api_v1_regions__region_code__kpis_get",
         "parameters": [
           {
@@ -136,13 +150,9 @@
             "in": "query",
             "required": false,
             "schema": {
-              "enum": [
-                "day",
-                "week",
-                "month"
-              ],
+              "const": "week",
               "type": "string",
-              "default": "month",
+              "default": "week",
               "title": "Period Type"
             }
           },
@@ -179,6 +189,24 @@
               ],
               "title": "To"
             }
+          },
+          {
+            "name": "source",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Ma nguon du lieu; bo trong = nguon mac dinh (is_default)",
+              "title": "Source"
+            },
+            "description": "Ma nguon du lieu; bo trong = nguon mac dinh (is_default)"
           }
         ],
         "responses": {
@@ -213,7 +241,7 @@
           "kpi"
         ],
         "summary": "Compare",
-        "description": "So sanh 1 KPI giua 2 ky. delta = B - A; null neu 1 trong 2 ky thieu du lieu.",
+        "description": "So sanh 1 KPI giua 2 tuan. delta = B - A; null neu 1 trong 2 tuan thieu du lieu.",
         "operationId": "compare_api_v1_compare_get",
         "parameters": [
           {
@@ -250,13 +278,9 @@
             "in": "query",
             "required": false,
             "schema": {
-              "enum": [
-                "day",
-                "week",
-                "month"
-              ],
+              "const": "week",
               "type": "string",
-              "default": "month",
+              "default": "week",
               "title": "Period Type"
             }
           },
@@ -276,10 +300,28 @@
                   "type": "null"
                 }
               ],
-              "description": "Loc theo ma vung, lap duoc",
+              "description": "Loc theo ma o, lap duoc",
               "title": "Region"
             },
-            "description": "Loc theo ma vung, lap duoc"
+            "description": "Loc theo ma o, lap duoc"
+          },
+          {
+            "name": "source",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Ma nguon du lieu; bo trong = nguon mac dinh (is_default)",
+              "title": "Source"
+            },
+            "description": "Ma nguon du lieu; bo trong = nguon mac dinh (is_default)"
           }
         ],
         "responses": {
@@ -386,7 +428,7 @@
           "region"
         ],
         "summary": "List Regions",
-        "description": "Tra ve GeoJSON FeatureCollection ranh gioi vung. Khong chua toa do tram.",
+        "description": "Tra ve GeoJSON FeatureCollection cac o luoi. Khong chua toa do tram.",
         "operationId": "list_regions_api_v1_regions_get",
         "parameters": [
           {

@@ -12,7 +12,7 @@ from app.routes_kpi import router as kpi_router
 
 app = FastAPI(
     title="N4.6 - Network Quality Map API (sandbox)",
-    version="0.1.0",
+    version="0.2.0",
     description="Ban thu cua Backend. Hop dong API chinh thuc: docs/api-contract.md",
 )
 
@@ -47,8 +47,10 @@ def health_db(session: SessionDep) -> dict:
 def list_kpis(session: SessionDep) -> list[dict]:
     rows = session.execute(
         text(
-            "SELECT code, name, unit, description, higher_is_better "
-            "FROM kpi_definition ORDER BY code"
+            "SELECT kpi_code, kpi_name, kpi_group, unit, higher_is_better, is_ratio, "
+            "valid_min::float8 AS valid_min, valid_max::float8 AS valid_max, description, "
+            "calculation_method, aggregation_method, reference_name, display_order "
+            "FROM kpis WHERE is_active ORDER BY display_order"
         )
     ).mappings()
     return [dict(r) for r in rows]
@@ -59,12 +61,12 @@ def list_regions(
     session: SessionDep,
     simplify: Annotated[float, Query(ge=0, le=0.01, description="Do don gian hoa (do)")] = 0,
 ) -> dict:
-    """Tra ve GeoJSON FeatureCollection ranh gioi vung. Khong chua toa do tram."""
+    """Tra ve GeoJSON FeatureCollection cac o luoi. Khong chua toa do tram."""
     rows = session.execute(
         text(
-            "SELECT region_code, name, level, "
+            "SELECT region_code, region_name, region_level, "
             "ST_AsGeoJSON(ST_Multi(ST_SimplifyPreserveTopology(geom, :tol)), 6) AS geometry "
-            "FROM region ORDER BY region_code"
+            "FROM regions ORDER BY region_code"
         ),
         {"tol": simplify},
     ).mappings()
@@ -72,7 +74,7 @@ def list_regions(
         {
             "type": "Feature",
             "id": r["region_code"],
-            "properties": {"region_code": r["region_code"], "name": r["name"], "level": r["level"]},
+            "properties": {k: r[k] for k in ("region_code", "region_name", "region_level")},
             "geometry": json.loads(r["geometry"]),
         }
         for r in rows
