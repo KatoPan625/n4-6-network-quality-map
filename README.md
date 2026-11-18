@@ -11,7 +11,7 @@ Dự án học kỳ doanh nghiệp UTH – VNPT NET. Nhóm xây dựng bản đ�
 | KPI (8) | `download_throughput`, `upload_throughput`, `latency`, `jitter`, `packet_loss_rate`, `network_availability`, `http_ip_access_failure_ratio`, `http_dropped_sessions_ratio` |
 | Không gian | Lưới vuông 1 km, khung `HCM-CENTER-NE` 15 × 11 km (khu Bến Thành đến Thủ Đức cũ), 165 ô mã `G1K-<i>-<j>` |
 | Thời gian | Tuần thứ Hai – Chủ nhật, 26 tuần từ 04/05/2026 đến 01/11/2026; không tổng hợp lên tháng |
-| Dữ liệu | Mô phỏng, luôn gắn nhãn `simulated`; **không phải số liệu của VNPT** |
+| Dữ liệu | Mô phỏng, luôn gắn nhãn `simulated`; |
 | Mức chất lượng | Tốt / trung bình / kém. Chưa có số; mỗi ngưỡng phải dẫn căn cứ (QCVN 34:2022/BTTTT, ITU-T Y.1540…). Ngưỡng nhóm tự đề xuất ghi `team_proposed` |
 
 ## Nhóm
