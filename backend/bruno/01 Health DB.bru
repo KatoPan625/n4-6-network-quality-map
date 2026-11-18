@@ -1,0 +1,18 @@
+meta {
+  name: 01 Health DB
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/health/db
+  body: none
+  auth: none
+}
+
+tests {
+  test("status 200", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().status).to.equal("ok");
+  });
+}
