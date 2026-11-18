@@ -1,0 +1,39 @@
+01 Health DB (200 OK) - 73 ms
+Tests
+   ✓ status 200
+02 KPI list (200 OK) - 6 ms
+Tests
+   ✓ status 200
+03 Regions GeoJSON (200 OK) - 6 ms
+Tests
+   ✓ status 200
+04 KPI values (200 OK) - 13 ms
+Tests
+   ✓ status 200
+05 Region detail (200 OK) - 7 ms
+Tests
+   ✓ status 200
+06 Compare (200 OK) - 7 ms
+Tests
+   ✓ status 200
+07 Unknown KPI 404 (404 Not Found) - 6 ms
+Tests
+   ✓ status 404
+08 Bad date 422 (422 Unprocessable Content) - 3 ms
+Tests
+   ✓ status 422
+
+📊 Execution Summary
+┌───────────────┬──────────────┐
+│ Metric        │    Result    │
+├───────────────┼──────────────┤
+│ Status        │    ✓ PASS    │
+├───────────────┼──────────────┤
+│ Requests      │ 8 (8 Passed) │
+├───────────────┼──────────────┤
+│ Tests         │     8/8      │
+├───────────────┼──────────────┤
+│ Assertions    │     0/0      │
+├───────────────┼──────────────┤
+│ Duration (ms) │     758      │
+└───────────────┴──────────────┘

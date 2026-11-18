@@ -1,0 +1,18 @@
+meta {
+  name: 03 Regions GeoJSON
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/api/v1/regions
+  body: none
+  auth: none
+}
+
+tests {
+  test("status 200", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().type).to.equal("FeatureCollection");
+  });
+}

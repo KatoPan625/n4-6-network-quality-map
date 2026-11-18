@@ -1,0 +1,18 @@
+meta {
+  name: 04 KPI values
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/api/v1/kpi-values?kpi=latency_ms&period_start=2026-10-01
+  body: none
+  auth: none
+}
+
+tests {
+  test("status 200", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().items.length).to.equal(9);
+  });
+}
