@@ -48,7 +48,7 @@ uv run python scripts/load_sample.py   # nạp dữ liệu thử
 uv run uvicorn app.main:app --reload   # http://localhost:8000/docs
 uv run pytest
 uv run ruff check . ; uv run ruff format .
-bru run --env local                    # trong backend/bruno
+npx @usebruno/cli run --env local     # trong backend/bruno, cần server đang chạy
 ```
 
 Nạp schema V2.1: `psql -d <db> -v ON_ERROR_STOP=1 -f db/N4.6_Database_Schema_V2.1.sql`.
