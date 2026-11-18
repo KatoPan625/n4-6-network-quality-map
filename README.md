@@ -2,12 +2,14 @@
 
 Dự án học kỳ doanh nghiệp UTH – VNPT NET, nhóm 5 thành viên. Xây dựng bản đồ web trực quan hóa KPI mạng đã tổng hợp theo khu vực và thời gian, hỗ trợ lọc, xem chi tiết, so sánh và xuất báo cáo.
 
-**Trạng thái ngày 04/11/2026:** chuẩn bị yêu cầu, phân công và kế hoạch. Mentor chưa xác nhận phạm vi cụ thể, dữ liệu hoặc công nghệ. Repo hiện chứa tài liệu khởi đầu; chưa có ứng dụng để chạy.
+**Trạng thái ngày 18/11/2026:** đã chốt mạng cố định, 8 KPI, lưới 1 km, chu kỳ tuần và dữ liệu mô phỏng (xem [nhật ký quyết định](docs/DECISIONS.md)). Backend sandbox nằm trong `backend/`; schema chính thức V2.1 nằm trong `db/`. Mentor chưa xác nhận hướng đã chốt ngày 18/11.
 
 ## Đọc trước khi nhận việc
 
 | Tài liệu | Nội dung |
 | --- | --- |
+| [Nhật ký quyết định](docs/DECISIONS.md) | Các quyết định đã chốt, lý do và phương án đã bỏ; ưu tiên hơn tài liệu ngày 04/11 |
+| [Schema V2.1](docs/SCHEMA-V2.1.md) | Thiết kế CSDL, KPI, lưới, chu kỳ, quy tắc dữ liệu; SQL ở `db/` |
 | [Yêu cầu](docs/REQUIREMENTS.md) | Phạm vi, yêu cầu chức năng, tiêu chí kiểm tra và các quyết định còn mở |
 | [Kế hoạch và phân công](docs/PLAN.md) | Vai trò tạm TV1–TV5, việc cần làm tiếp theo, deadline và mốc báo cáo |
 | [Dữ liệu và KPI](docs/DATA.md) | Cách mô tả nguồn dữ liệu, KPI, dữ liệu thiếu và dữ liệu mô phỏng |
@@ -36,6 +38,6 @@ GitHub Projects là phương án đề xuất để quản lý cùng repo; cấu
 
 ## Dữ liệu và công nghệ
 
-Chưa chốt framework, cơ sở dữ liệu hoặc bộ KPI. Tệp yêu cầu dự án là `docs/REQUIREMENTS.md`; chưa tạo `requirements.txt` hay tệp phụ thuộc khi chưa chọn công nghệ.
+CSDL PostgreSQL 17 + PostGIS 3.5.2; Backend FastAPI (Python, quản lý bằng uv). Hướng dẫn chạy Backend ở `backend/README.md`. Frontend chưa chọn thư viện bản đồ.
 
 Giữ repo riêng tư. Chỉ đưa lên dữ liệu đã được phép sử dụng; không đưa mật khẩu, token, tọa độ nhạy cảm hoặc dữ liệu thuê bao vào repo. Quyền công bố mã nguồn và giấy phép cần nhóm/mentor thống nhất trước khi phát hành công khai.
