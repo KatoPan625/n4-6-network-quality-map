@@ -12,7 +12,7 @@ Dự án học kỳ doanh nghiệp UTH – VNPT NET. Nhóm xây dựng bản đ�
 | Tổng hợp | Cell → vùng: `Σ(KPI × traffic) / Σtraffic`; riêng `traffic` cộng tổng. Vùng thiếu một phần cell có trạng thái `partial` |
 | Không gian | 34 tỉnh/thành sau sắp xếp 01/07/2025; chi tiết phường/xã cho TP.HCM (168 đơn vị). Không lưu, không hiển thị tọa độ trạm/cell |
 | Thời gian | Theo giờ, 30 ngày (01–30/10/2026), giờ Việt Nam; cấp ngày tính từ giờ |
-| Dữ liệu | Mô phỏng, luôn gắn nhãn `simulated`; **không phải số liệu của VNPT** |
+| Dữ liệu | Mô phỏng, luôn gắn nhãn `simulated` |
 | Mức chất lượng | Tốt / trung bình / kém. Chưa có số; ngưỡng nhóm tự đề xuất ghi `team_proposed`, không gọi là chuẩn |
 | Ranh giới | sapnhap.bando.com.vn (Bộ NN&MT), bản trích xuất `myleo198/sapnhap-bando-vn`, CC BY-NC 4.0 |
 
