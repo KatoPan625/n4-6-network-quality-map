@@ -12,12 +12,18 @@ from pathlib import Path
 
 import httpx
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from scripts.load_sample import CASE_HOUR, PARTIAL_WARD, ZERO_TRAFFIC_WARD
+
 ROOT = Path(__file__).resolve().parent.parent
 EV = ROOT / "evidence"
 TMP = EV / "_html"
 EDGE = r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
 BASE = "http://localhost:8000"
 DAY = date.today().isoformat()
+SRC = "BE-SAMPLE"
+HOUR_CASE = CASE_HOUR.strftime("%Y-%m-%dT%H:%M")
+DAY_CASE = CASE_HOUR.date().isoformat()
 CSS = (
     "body{font-family:Segoe UI,Arial;margin:24px;background:#fff;color:#1b1b1b}"
     "h1{font-size:20px;margin:0 0 4px}p.sub{color:#555;margin:0 0 14px;font-size:13px}"
@@ -67,37 +73,36 @@ def color(v: float, lo: float, hi: float, higher_is_better: bool) -> str:
     return f"hsl({round(t * 120)},65%,55%)"
 
 
-def grid_preview(client: httpx.Client) -> None:
-    params = {"kpi": "latency", "period_start": "2026-10-26", "source": "BE-SAMPLE"}
-    regions = client.get("/api/v1/regions").json()["features"]
+def ward_map_preview(client: httpx.Client) -> None:
+    params = {"kpi": "cssr", "level": "ward", "period_type": "day", "at": DAY_CASE, "source": SRC}
+    regions = client.get("/api/v1/regions", params={"level": "ward", "simplify": 0.002}).json()
     kv = client.get("/api/v1/kpi-values", params=params).json()
     vals = {i["region_code"]: i for i in kv["items"]}
-    ok = [i["value"] for i in kv["items"] if i["status"] == "ok"]
+    ok = [i["value"] for i in kv["items"] if i["value"] is not None]
     lo, hi = min(ok), max(ok)
-    xs = [p[0] for f in regions for p in f["geometry"]["coordinates"][0][0]]
-    ys = [p[1] for f in regions for p in f["geometry"]["coordinates"][0][0]]
-    sx, sy, size = min(xs), max(ys), 480
+    rings = {
+        f["id"]: [ring[0] for ring in f["geometry"]["coordinates"]] for f in regions["features"]
+    }
+    xs = [x for rs in rings.values() for r in rs for x, _ in r]
+    ys = [y for rs in rings.values() for r in rs for _, y in r]
+    size = 640
+    scale = size / max(max(xs) - min(xs), max(ys) - min(ys))
 
     def pt(p):
-        return (p[0] - sx) / (max(xs) - sx) * size, (sy - p[1]) / (sy - min(ys)) * size
+        return (p[0] - min(xs)) * scale, (max(ys) - p[1]) * scale
 
     shapes = []
-    for f in regions:
-        ring = [pt(p) for p in f["geometry"]["coordinates"][0][0]]
-        code = f["properties"]["region_code"]
+    for code, rs in rings.items():
         item = vals[code]
-        fill = "url(#hatch)" if item["value"] is None else color(item["value"], lo, hi, False)
-        label = "thieu du lieu" if item["value"] is None else f"{item['value']} {kv['kpi']['unit']}"
-        cx = sum(x for x, _ in ring[:-1]) / 4
-        cy = sum(y for _, y in ring[:-1]) / 4
-        poly = " ".join(f"{x:.1f},{y:.1f}" for x, y in ring)
-        shapes.append(
-            f"<polygon points='{poly}' fill='{fill}' stroke='#fff' stroke-width='3'/>"
-            f"<text x='{cx}' y='{cy - 6}' text-anchor='middle' font-size='14' font-weight='600'>{code}</text>"
-            f"<text x='{cx}' y='{cy + 14}' text-anchor='middle' font-size='13'>{label}</text>"
-        )
+        fill = "url(#hatch)" if item["value"] is None else color(item["value"], lo, hi, True)
+        dash = " stroke-dasharray='4 3' stroke='#111'" if item["status"] == "partial" else ""
+        for r in rs:
+            poly = " ".join(f"{x:.1f},{y:.1f}" for x, y in map(pt, r))
+            shapes.append(
+                f"<polygon points='{poly}' fill='{fill}' stroke='#fff' stroke-width='1'{dash}/>"
+            )
     svg = (
-        f"<svg width='{size}' height='{size}' style='font-family:Segoe UI'>"
+        f"<svg width='{size}' height='{size}'>"
         "<defs><pattern id='hatch' width='8' height='8' patternUnits='userSpaceOnUse' "
         "patternTransform='rotate(45)'><rect width='8' height='8' fill='#e5e7eb'/>"
         "<line x1='0' y1='0' x2='0' y2='8' stroke='#9ca3af' stroke-width='3'/></pattern></defs>"
@@ -105,16 +110,16 @@ def grid_preview(client: httpx.Client) -> None:
         + "</svg>"
     )
     legend = (
-        "<p class='sub' style='margin-top:10px'>Xanh = do tre thap (tot), do = cao. "
-        "Gach cheo = thieu du lieu (API tra null + status missing, khong phai 0).</p>"
+        f"<p class='sub' style='margin-top:10px'>CSSR ngay {DAY_CASE}: xanh = cao (tot), do = thap. "
+        "Gach cheo = khong tinh duoc gia tri; vien net dut = partial (thieu mot phan cell).</p>"
     )
     page(
-        "e2e_grid_preview",
-        "Kiem tra luong CSDL -> API: latency, tuan 26/10/2026",
-        "Anh kiem tra du lieu cua Backend (khong phai giao dien Frontend). Du lieu thu BE-SAMPLE, luoi 1 km.",
+        "e2e_ward_map_preview",
+        f"Kiem tra luong CSDL -> API: CSSR 168 phuong/xa TP.HCM, ngay {DAY_CASE}",
+        "Anh kiem tra du lieu cua Backend (khong phai giao dien Frontend). Du lieu thu BE-SAMPLE.",
         svg + legend,
-        560,
         720,
+        800,
     )
 
 
@@ -122,18 +127,19 @@ def json_page(client: httpx.Client) -> None:
     res = client.get(
         "/api/v1/kpi-values",
         params={
-            "kpi": "latency",
-            "period_start": "2026-10-26",
-            "source": "BE-SAMPLE",
-            "region": ["G1K-684-1190", "G1K-690-1195"],
+            "kpi": "cssr",
+            "level": "ward",
+            "at": HOUR_CASE,
+            "source": SRC,
+            "region": [PARTIAL_WARD, ZERO_TRAFFIC_WARD],
         },
     )
     body = json.dumps(res.json(), indent=2, ensure_ascii=False)
     url = str(res.request.url).replace(BASE, "")
     page(
-        "api_kpi_values_missing",
+        "api_kpi_values_partial",
         f"GET {url}",
-        f"HTTP {res.status_code} - G1K-690-1195 thieu du lieu",
+        f"HTTP {res.status_code} - phuong partial va phuong khong co traffic duong",
         f"<pre>{html.escape(body)}</pre>",
         1000,
         120 + 19 * len(body.splitlines()),
@@ -143,7 +149,7 @@ def json_page(client: httpx.Client) -> None:
 def main() -> None:
     with httpx.Client(base_url=BASE, timeout=10) as client:
         client.get("/health").raise_for_status()
-        grid_preview(client)
+        ward_map_preview(client)
         json_page(client)
     subprocess.run(
         [
@@ -161,7 +167,7 @@ def main() -> None:
     )
     print("Da tao", f"{DAY}_swagger_docs.png")
     log_page("pytest", "Kiem thu tu dong: uv run pytest -v", "pytest_run.txt")
-    log_page("bruno_run", "Kiem thu API bang Bruno CLI (8 request)", "bruno_run.txt")
+    log_page("bruno_run", "Kiem thu API bang Bruno CLI", "bruno_run.txt")
     log_page("bench_baseline", "Baseline thoi gian phan hoi API (quy mo lab)", "bench_baseline.txt")
     log_page("git_log", "Lich su commit", "git_log.txt")
 

@@ -1,10 +1,6 @@
-"""Test API KPI tren du lieu thu BE-SAMPLE (scripts/make_sample_data.py).
+"""Test API KPI tren du lieu thu BE-SAMPLE (scripts/load_sample.py, cac ca co y o CASE_HOUR)."""
 
-Du lieu thu co y de:
-  G1K-690-1195 / latency / W2 : co dong, status missing
-  G1K-683-1190 / latency / W2 : khong co dong nao
-  G1K-697-1200 / packet_loss_rate / W1 : status invalid
-"""
+from datetime import timedelta
 
 from fastapi.testclient import TestClient
 from sqlalchemy import text
@@ -12,9 +8,18 @@ from sqlalchemy.orm import Session
 
 from app.db import engine, get_session
 from app.main import app
+from scripts.load_sample import (
+    CASE_HOUR,
+    INVALID_CELL,
+    MISSING_PROVINCE,
+    PARTIAL_WARD,
+    POOR_WARD,
+    ZERO_TRAFFIC_WARD,
+)
 
 client = TestClient(app)
-W1, W2 = "2026-10-19", "2026-10-26"
+HOUR = CASE_HOUR.strftime("%Y-%m-%dT%H:%M")  # gio VN, khong kem mui gio
+DAY = CASE_HOUR.date().isoformat()
 SRC = {"source": "BE-SAMPLE"}
 
 
@@ -22,56 +27,147 @@ def get(path, **params):
     return client.get(path, params={**SRC, **params})
 
 
-def by_region(items):
-    return {i["region_code"]: i for i in items}
+def values(**params) -> dict:
+    return {i["region_code"]: i for i in get("/api/v1/kpi-values", **params).json()["items"]}
 
 
-def test_kpi_values_returns_all_cells_with_unit_and_source_label():
-    body = get("/api/v1/kpi-values", kpi="latency", period_start=W2).json()
-    assert body["kpi"] == {"kpi_code": "latency", "unit": "ms", "higher_is_better": False}
+def test_hour_ward_level_returns_all_168_wards_with_source_label():
+    body = get("/api/v1/kpi-values", kpi="cssr", level="ward", at=HOUR).json()
+    assert len(body["items"]) == 168
     assert body["source"]["source_code"] == "BE-SAMPLE"
     assert body["source"]["data_nature"] == "simulated"
-    assert body["period"] == {"type": "week", "start": W2}
-    assert len(body["items"]) == 165
+    assert body["period"] == {"type": "hour", "at": CASE_HOUR.isoformat()}
+    assert body["kpi"]["unit"] == "%"
 
 
-def test_default_source_is_sim_v1():
-    body = client.get("/api/v1/kpi-values", params={"kpi": "latency", "period_start": W2}).json()
-    assert body["source"]["source_code"] == "SIM-V1"
-    assert body["source"]["data_nature"] == "simulated"
+def test_partial_ward_keeps_value_and_reports_cells():
+    item = values(kpi="cssr", level="ward", at=HOUR)[PARTIAL_WARD]
+    assert item["status"] == "partial"
+    assert item["value"] is not None
+    assert (item["cells_reported"], item["cells_total"]) == (1, 2)
 
 
-def test_unknown_source_is_404():
-    res = client.get(
-        "/api/v1/kpi-values", params={"kpi": "latency", "period_start": W2, "source": "KHONG-CO"}
-    )
-    assert res.status_code == 404
+def test_zero_traffic_ward_has_null_value_and_reason():
+    item = values(kpi="cssr", level="ward", at=HOUR)[ZERO_TRAFFIC_WARD]
+    assert item["value"] is None
+    assert item["status"] == "ok"
+    assert item["reason"] == "no_positive_traffic"
+    assert "aggregation_status" not in item
 
 
-def test_missing_is_null_not_zero():
-    items = by_region(get("/api/v1/kpi-values", kpi="latency", period_start=W2).json()["items"])
-    for code in ("G1K-690-1195", "G1K-683-1190"):  # co dong missing / khong co dong
-        assert items[code]["value"] is None and items[code]["status"] == "missing"
-        assert items[code]["quality_level"] is None
-    ok = items["G1K-684-1190"]
-    assert ok["status"] == "ok" and ok["value"] is not None and ok["sample_count"] > 0
+def test_invalid_cell_makes_ward_partial():
+    ward = INVALID_CELL.split("-")[1]
+    item = values(kpi="user_throughput", level="ward", at=HOUR)[ward]
+    assert item["status"] == "partial" and item["cells_reported"] == 1
 
 
-def test_invalid_is_null():
-    items = by_region(
-        get("/api/v1/kpi-values", kpi="packet_loss_rate", period_start=W1).json()["items"]
-    )
-    assert items["G1K-697-1200"]["value"] is None
-    assert items["G1K-697-1200"]["status"] == "invalid"
+def test_missing_province_is_null_not_zero():
+    item = values(kpi="traffic", at=HOUR)[MISSING_PROVINCE]
+    assert item["value"] is None
+    assert item["status"] == "missing"
+    assert item["cells_reported"] == 0 and item["cells_total"] == 20
 
 
-def test_quality_level_null_without_thresholds():
-    items = get("/api/v1/kpi-values", kpi="latency", period_start=W1).json()["items"]
-    assert all(i["quality_level"] is None for i in items)
+def test_province_level_returns_34_and_traffic_is_sum():
+    items = values(kpi="traffic", at=HOUR)
+    assert len(items) == 34
+    wards = values(kpi="traffic", level="ward", at=HOUR)
+    total = sum(w["value"] for w in wards.values() if w["value"] is not None)
+    assert abs(items["79"]["value"] - total) < 1e-3
 
 
-def test_quality_level_from_thresholds():
-    """Them nguong tam trong 1 giao dich roi rollback, khong de lai gi trong CSDL."""
+def test_poor_ward_is_lower_than_city():
+    ward = values(kpi="cssr", level="ward", period_type="day", at=DAY)[POOR_WARD]["value"]
+    city = values(kpi="cssr", period_type="day", at=DAY)["79"]["value"]
+    assert ward < city - 3
+
+
+def test_day_status_uses_cell_hours():
+    item = values(kpi="traffic", period_type="day", at=DAY)[MISSING_PROVINCE]
+    assert item["status"] == "partial"
+    assert (item["cell_hours_reported"], item["cell_hours_expected"]) == (460, 480)
+
+
+def test_hour_accepts_offset_utc_and_plus_decoded_as_space():
+    naive = values(kpi="cssr", at=HOUR)["79"]["value"]
+    utc = (CASE_HOUR - timedelta(hours=7)).strftime("%Y-%m-%dT%H:%MZ")
+    assert values(kpi="cssr", at=utc)["79"]["value"] == naive
+    assert values(kpi="cssr", at=f"{HOUR} 07:00")["79"]["value"] == naive
+
+
+def test_region_filter():
+    items = get("/api/v1/kpi-values", kpi="cssr", level="ward", at=HOUR, region=[POOR_WARD])
+    assert [i["region_code"] for i in items.json()["items"]] == [POOR_WARD]
+
+
+def test_default_source_is_sim_4g():
+    res = client.get("/api/v1/kpi-values", params={"kpi": "cssr", "at": HOUR})
+    assert res.json()["source"]["source_code"] == "SIM-4G-2026-10"
+
+
+def test_not_found_is_404():
+    assert get("/api/v1/kpi-values", kpi="khong_co", at=HOUR).status_code == 404
+    assert get("/api/v1/kpi-values", kpi="cssr", at=HOUR, source="KHONG-CO").status_code == 404
+    assert get("/api/v1/regions/KHONG-CO/kpis").status_code == 404
+
+
+def test_bad_time_or_params_are_422():
+    for params in (
+        {"at": "10/2026"},
+        {"at": HOUR.replace(":00", ":30")},
+        {"at": "2026-10-20T08:00"},  # ngoai khoang 72 gio cua BE-SAMPLE
+        {"at": DAY, "period_type": "week"},
+        {"at": HOUR, "level": "district"},
+    ):
+        assert get("/api/v1/kpi-values", kpi="cssr", **params).status_code == 422, params
+
+
+def test_region_series_daily_by_default_in_kpi_order():
+    body = get(f"/api/v1/regions/{POOR_WARD}/kpis").json()
+    assert (body["region_level"], body["parent_code"]) == ("ward", "79")
+    assert [k["kpi_code"] for k in body["kpis"]] == [
+        "cssr",
+        "service_drop_all",
+        "user_throughput",
+        "traffic",
+    ]
+    assert [p["at"] for p in body["kpis"][0]["series"]] == [
+        "2026-10-01",
+        "2026-10-02",
+        "2026-10-03",
+    ]
+
+
+def test_region_series_hour_range_and_errors():
+    hour_a = (CASE_HOUR - timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M")
+    body = get(
+        f"/api/v1/regions/{ZERO_TRAFFIC_WARD}/kpis",
+        kpi="cssr",
+        period_type="hour",
+        **{"from": hour_a, "to": HOUR},
+    ).json()
+    series = body["kpis"][0]["series"]
+    assert len(series) == 2 and series[1]["reason"] == "no_positive_traffic"
+    bad = get(f"/api/v1/regions/{POOR_WARD}/kpis", **{"from": "2026-10-03", "to": "2026-10-01"})
+    assert bad.status_code == 422
+
+
+def test_compare_delta_is_b_minus_a_and_null_when_missing():
+    hour_a = (CASE_HOUR - timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M")
+    items = {
+        i["region_code"]: i
+        for i in get(
+            "/api/v1/compare", kpi="cssr", level="ward", period_type="hour", a=hour_a, b=HOUR
+        ).json()["items"]
+    }
+    ok = items[POOR_WARD]
+    assert ok["delta"] == round(ok["value_b"] - ok["value_a"], 4)
+    assert items[ZERO_TRAFFIC_WARD]["value_b"] is None
+    assert items[ZERO_TRAFFIC_WARD]["delta"] is None
+
+
+def test_quality_level_also_for_partial_regions():
+    """Them nguong tam, refresh MV trong 1 giao dich roi rollback, khong de lai gi."""
     with engine.connect() as conn:
         trans = conn.begin()
         conn.execute(
@@ -79,75 +175,23 @@ def test_quality_level_from_thresholds():
                 "INSERT INTO kpi_thresholds (kpi_id, quality_level, min_value, max_value, "
                 "threshold_type, threshold_basis) "
                 "SELECT kpi_id, lv, lo, hi, 'team_proposed', 'chi de test' FROM kpis, "
-                "(VALUES ('good', NULL::numeric, 20::numeric), ('medium', 20, 40), "
-                "('poor', 40, NULL)) AS t(lv, lo, hi) WHERE kpi_code = 'latency'"
+                "(VALUES ('good', 97::numeric, NULL::numeric), ('medium', 95, 97), "
+                "('poor', NULL, 95)) AS t(lv, lo, hi) WHERE kpi_code = 'cssr'"
             )
         )
+        conn.execute(text("REFRESH MATERIALIZED VIEW mv_region_kpi"))
         app.dependency_overrides[get_session] = lambda: Session(bind=conn)
         try:
-            items = get("/api/v1/kpi-values", kpi="latency", period_start=W1).json()["items"]
+            items = values(kpi="cssr", level="ward", at=HOUR)
         finally:
             app.dependency_overrides.clear()
             trans.rollback()
-    for i in items:
-        expected = "good" if i["value"] < 20 else "medium" if i["value"] < 40 else "poor"
-        assert i["quality_level"] == expected
-        assert i["threshold_type"] == "team_proposed"
-
-
-def test_region_filter():
-    res = get(
-        "/api/v1/kpi-values",
-        kpi="latency",
-        period_start=W2,
-        region=["G1K-683-1190", "G1K-697-1200"],
-    )
-    assert [i["region_code"] for i in res.json()["items"]] == ["G1K-683-1190", "G1K-697-1200"]
-
-
-def test_unknown_kpi_is_404():
-    assert get("/api/v1/kpi-values", kpi="khong_co", period_start=W2).status_code == 404
-
-
-def test_bad_date_period_type_and_non_monday_are_422():
-    assert get("/api/v1/kpi-values", kpi="latency", period_start="10/2026").status_code == 422
-    assert (
-        get("/api/v1/kpi-values", kpi="latency", period_start=W2, period_type="month").status_code
-        == 422
-    )
-    assert get("/api/v1/kpi-values", kpi="latency", period_start="2026-10-20").status_code == 422
-
-
-def test_region_detail_series():
-    body = get("/api/v1/regions/G1K-690-1195/kpis").json()
-    assert body["source"]["source_code"] == "BE-SAMPLE"
-    assert [k["kpi_code"] for k in body["kpis"]][:2] == ["download_throughput", "upload_throughput"]
-    lat = next(k for k in body["kpis"] if k["kpi_code"] == "latency")
-    assert [p["period_start"] for p in lat["series"]] == [W1, W2]
-    assert lat["series"][1]["value"] is None and lat["series"][1]["status"] == "missing"
-
-
-def test_region_detail_date_range_and_kpi_filter():
-    body = get("/api/v1/regions/G1K-684-1190/kpis", kpi="latency", **{"from": W2, "to": W2}).json()
-    assert len(body["kpis"]) == 1 and len(body["kpis"][0]["series"]) == 1
-
-
-def test_region_detail_errors():
-    assert get("/api/v1/regions/KHONG-CO/kpis").status_code == 404
-    assert get("/api/v1/regions/G1K-684-1190/kpis", **{"from": W2, "to": W1}).status_code == 422
-
-
-def test_compare_delta_is_b_minus_a():
-    items = by_region(
-        get("/api/v1/compare", kpi="latency", period_a=W1, period_b=W2).json()["items"]
-    )
-    r = items["G1K-684-1190"]
-    assert r["delta"] == round(r["value_b"] - r["value_a"], 4)
-
-
-def test_compare_delta_null_when_one_period_missing():
-    items = by_region(
-        get("/api/v1/compare", kpi="latency", period_a=W1, period_b=W2).json()["items"]
-    )
-    assert items["G1K-690-1195"]["status_b"] == "missing"
-    assert items["G1K-690-1195"]["delta"] is None
+    partial = items[PARTIAL_WARD]
+    assert partial["status"] == "partial" and partial["quality_level"] is not None
+    assert items[POOR_WARD]["quality_level"] == "poor"
+    assert items[ZERO_TRAFFIC_WARD]["quality_level"] is None
+    for i in items.values():
+        if i["value"] is not None:
+            v = i["value"]
+            assert i["quality_level"] == ("good" if v >= 97 else "medium" if v >= 95 else "poor")
+            assert i["threshold_type"] == "team_proposed"

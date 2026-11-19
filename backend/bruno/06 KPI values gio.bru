@@ -1,0 +1,18 @@
+meta {
+  name: 06 KPI values gio
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrl}}/api/v1/kpi-values?kpi=cssr&level=ward&at=2026-10-02T20:00&source=BE-SAMPLE
+  body: none
+  auth: none
+}
+
+tests {
+  test("status 200", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().items.length).to.equal(168); expect(res.getBody().source.data_nature).to.equal("simulated");
+  });
+}

@@ -343,7 +343,7 @@ wheels = [
 ]
 
 [[package]]
-name = "n46-backend-sandbox"
+name = "n46-backend"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [

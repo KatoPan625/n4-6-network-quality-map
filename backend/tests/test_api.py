@@ -1,4 +1,4 @@
-"""Test can CSDL dang chay voi schema V2.1 (xem README)."""
+"""Test can CSDL dang chay voi schema cua du an va da nap scripts/load_regions.py (xem README)."""
 
 from fastapi.testclient import TestClient
 
@@ -17,28 +17,48 @@ def test_health_db_reports_postgis():
     assert res.json()["postgis"].startswith("3.")
 
 
-def test_kpis_are_the_8_fixed_network_kpis_in_order():
+def test_kpis_are_the_4_mobile_kpis_in_order():
     kpis = client.get("/api/v1/kpis").json()
     assert [k["kpi_code"] for k in kpis] == [
-        "download_throughput",
-        "upload_throughput",
-        "latency",
-        "jitter",
-        "packet_loss_rate",
-        "network_availability",
-        "http_ip_access_failure_ratio",
-        "http_dropped_sessions_ratio",
+        "cssr",
+        "service_drop_all",
+        "user_throughput",
+        "traffic",
     ]
-    assert all(k["unit"] in {"Mbps", "ms", "%"} and k["description"] for k in kpis)
-    assert all(k["is_ratio"] == (k["unit"] == "%") for k in kpis)
+    by_code = {k["kpi_code"]: k for k in kpis}
+    assert by_code["traffic"]["aggregation_rule"] == "sum"
+    assert by_code["traffic"]["higher_is_better"] is None
+    assert by_code["service_drop_all"]["higher_is_better"] is False
+    assert all(k["calculation_method"] and k["unit"] for k in kpis)
 
 
-def test_regions_is_165_cell_geojson_without_station_fields():
+def test_sources_list_default_first_with_local_period():
+    sources = client.get("/api/v1/sources").json()
+    assert sources[0]["is_default"] is True
+    assert {s["source_code"] for s in sources} >= {"SIM-4G-2026-10", "BE-SAMPLE"}
+    assert all(s["data_nature"] == "simulated" for s in sources)
+    assert sources[0]["period_from"].endswith("+07:00")
+
+
+def test_regions_province_geojson_without_station_fields():
     body = client.get("/api/v1/regions").json()
     assert body["type"] == "FeatureCollection"
-    assert len(body["features"]) == 165
-    f = body["features"][0]
-    assert f["id"] == "G1K-683-1190"
-    assert set(f["properties"]) == {"region_code", "region_name", "region_level"}
-    assert f["properties"]["region_level"] == "grid_1km"
+    assert len(body["features"]) == 34
+    f = next(f for f in body["features"] if f["id"] == "79")
+    assert f["properties"] == {
+        "region_code": "79",
+        "region_name": "Thành phố Hồ Chí Minh",
+        "region_level": "province",
+        "parent_code": None,
+    }
     assert f["geometry"]["type"] == "MultiPolygon"
+
+
+def test_regions_ward_level_is_168_hcm_wards():
+    features = client.get("/api/v1/regions", params={"level": "ward"}).json()["features"]
+    assert len(features) == 168
+    assert {f["properties"]["parent_code"] for f in features} == {"79"}
+
+
+def test_regions_bad_level_is_422():
+    assert client.get("/api/v1/regions", params={"level": "district"}).status_code == 422

@@ -1,7 +1,7 @@
 [project]
-name = "n46-backend-sandbox"
+name = "n46-backend"
 version = "0.1.0"
-description = "N4.6 - Backend sandbox: FastAPI + PostgreSQL/PostGIS (ban thu, chua phai repo chung)"
+description = "N4.6 - Backend ban do chat luong mang: FastAPI + PostgreSQL/PostGIS"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
