@@ -1,0 +1,18 @@
+meta {
+  name: 07 KPI values ngay
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{baseUrl}}/api/v1/kpi-values?kpi=traffic&period_type=day&at=2026-10-02&source=BE-SAMPLE
+  body: none
+  auth: none
+}
+
+tests {
+  test("status 200", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().items.length).to.equal(34);
+  });
+}

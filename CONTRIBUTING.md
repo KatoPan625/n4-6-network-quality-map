@@ -14,9 +14,9 @@
 4. Mở pull request (PR), liên kết issue, mô tả thay đổi và cách kiểm tra.
 5. Nhờ một thành viên khác review; sửa góp ý rồi hợp nhất vào `main`.
 
-Đây là quy ước nhóm; bảo vệ nhánh `main` trên GitHub chưa bật.
+Nhánh `main` được bảo vệ trên GitHub: mọi thay đổi đi qua PR và cần 1 người duyệt.
 
-Khi đổi KPI, đơn vị, ngưỡng hay API, cập nhật `docs/SCHEMA-V2.1.md` hoặc `backend/docs/api-contract.md` trong cùng PR.
+Khi đổi KPI, đơn vị, ngưỡng hay API, cập nhật `docs/SCHEMA.md` hoặc `backend/docs/api-contract.md` trong cùng PR.
 
 ## Kiểm tra trước khi mở PR
 

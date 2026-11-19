@@ -36,6 +36,7 @@ Desktop.ini
 # Tai lieu noi bo: chi giu tren may, khong dua len GitHub
 /CLAUDE.md
 /docs/*
-!/docs/SCHEMA-V2.1.md
+!/docs/SCHEMA.md
 !/docs/REPORT-TEMPLATE.md
 /backend/evidence/
+/backend/data/raw/

@@ -1,9 +1,9 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "N4.6 - Network Quality Map API (sandbox)",
-    "description": "Ban thu cua Backend. Hop dong API chinh thuc: docs/api-contract.md",
-    "version": "0.2.0"
+    "title": "N4.6 - Network Quality Map API",
+    "description": "Backend ban do chat luong mang. Hop dong API: docs/api-contract.md",
+    "version": "0.1.0"
   },
   "paths": {
     "/api/v1/kpi-values": {
@@ -12,7 +12,7 @@
           "kpi"
         ],
         "summary": "Kpi Values",
-        "description": "Gia tri 1 KPI cua moi o trong 1 tuan - dung de to mau ban do.",
+        "description": "Gia tri 1 KPI cua moi vung o 1 gio hoac 1 ngay - dung de to mau ban do.",
         "operationId": "kpi_values_api_v1_kpi_values_get",
         "parameters": [
           {
@@ -25,13 +25,28 @@
             }
           },
           {
-            "name": "period_start",
+            "name": "at",
             "in": "query",
             "required": true,
             "schema": {
               "type": "string",
-              "format": "date",
-              "title": "Period Start"
+              "description": "hour: 'YYYY-MM-DDTHH:00' (gio VN, co the kem +07:00); day: 'YYYY-MM-DD'",
+              "title": "At"
+            },
+            "description": "hour: 'YYYY-MM-DDTHH:00' (gio VN, co the kem +07:00); day: 'YYYY-MM-DD'"
+          },
+          {
+            "name": "level",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "province",
+                "ward"
+              ],
+              "type": "string",
+              "default": "province",
+              "title": "Level"
             }
           },
           {
@@ -39,9 +54,12 @@
             "in": "query",
             "required": false,
             "schema": {
-              "const": "week",
+              "enum": [
+                "hour",
+                "day"
+              ],
               "type": "string",
-              "default": "week",
+              "default": "hour",
               "title": "Period Type"
             }
           },
@@ -61,10 +79,10 @@
                   "type": "null"
                 }
               ],
-              "description": "Loc theo ma o, lap duoc",
+              "description": "Loc theo ma vung, lap duoc",
               "title": "Region"
             },
-            "description": "Loc theo ma o, lap duoc"
+            "description": "Loc theo ma vung, lap duoc"
           },
           {
             "name": "source",
@@ -117,7 +135,7 @@
           "kpi"
         ],
         "summary": "Region Kpis",
-        "description": "Chuoi thoi gian KPI cua 1 o - dung cho man hinh chi tiet.",
+        "description": "Chuoi thoi gian KPI cua 1 vung - dung cho man hinh chi tiet. Mac dinh ca khoang cua nguon.",
         "operationId": "region_kpis_api_v1_regions__region_code__kpis_get",
         "parameters": [
           {
@@ -150,9 +168,12 @@
             "in": "query",
             "required": false,
             "schema": {
-              "const": "week",
+              "enum": [
+                "hour",
+                "day"
+              ],
               "type": "string",
-              "default": "week",
+              "default": "day",
               "title": "Period Type"
             }
           },
@@ -163,15 +184,16 @@
             "schema": {
               "anyOf": [
                 {
-                  "type": "string",
-                  "format": "date"
+                  "type": "string"
                 },
                 {
                   "type": "null"
                 }
               ],
+              "description": "hour: 'YYYY-MM-DDTHH:00' (gio VN, co the kem +07:00); day: 'YYYY-MM-DD'",
               "title": "From"
-            }
+            },
+            "description": "hour: 'YYYY-MM-DDTHH:00' (gio VN, co the kem +07:00); day: 'YYYY-MM-DD'"
           },
           {
             "name": "to",
@@ -180,15 +202,16 @@
             "schema": {
               "anyOf": [
                 {
-                  "type": "string",
-                  "format": "date"
+                  "type": "string"
                 },
                 {
                   "type": "null"
                 }
               ],
+              "description": "hour: 'YYYY-MM-DDTHH:00' (gio VN, co the kem +07:00); day: 'YYYY-MM-DD'",
               "title": "To"
-            }
+            },
+            "description": "hour: 'YYYY-MM-DDTHH:00' (gio VN, co the kem +07:00); day: 'YYYY-MM-DD'"
           },
           {
             "name": "source",
@@ -241,7 +264,7 @@
           "kpi"
         ],
         "summary": "Compare",
-        "description": "So sanh 1 KPI giua 2 tuan. delta = B - A; null neu 1 trong 2 tuan thieu du lieu.",
+        "description": "So sanh 1 KPI giua 2 moc. delta = B - A; null neu 1 trong 2 moc khong co gia tri.",
         "operationId": "compare_api_v1_compare_get",
         "parameters": [
           {
@@ -254,23 +277,39 @@
             }
           },
           {
-            "name": "period_a",
+            "name": "a",
             "in": "query",
             "required": true,
             "schema": {
               "type": "string",
-              "format": "date",
-              "title": "Period A"
-            }
+              "description": "hour: 'YYYY-MM-DDTHH:00' (gio VN, co the kem +07:00); day: 'YYYY-MM-DD'",
+              "title": "A"
+            },
+            "description": "hour: 'YYYY-MM-DDTHH:00' (gio VN, co the kem +07:00); day: 'YYYY-MM-DD'"
           },
           {
-            "name": "period_b",
+            "name": "b",
             "in": "query",
             "required": true,
             "schema": {
               "type": "string",
-              "format": "date",
-              "title": "Period B"
+              "description": "hour: 'YYYY-MM-DDTHH:00' (gio VN, co the kem +07:00); day: 'YYYY-MM-DD'",
+              "title": "B"
+            },
+            "description": "hour: 'YYYY-MM-DDTHH:00' (gio VN, co the kem +07:00); day: 'YYYY-MM-DD'"
+          },
+          {
+            "name": "level",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "province",
+                "ward"
+              ],
+              "type": "string",
+              "default": "province",
+              "title": "Level"
             }
           },
           {
@@ -278,9 +317,12 @@
             "in": "query",
             "required": false,
             "schema": {
-              "const": "week",
+              "enum": [
+                "hour",
+                "day"
+              ],
               "type": "string",
-              "default": "week",
+              "default": "day",
               "title": "Period Type"
             }
           },
@@ -300,10 +342,10 @@
                   "type": "null"
                 }
               ],
-              "description": "Loc theo ma o, lap duoc",
+              "description": "Loc theo ma vung, lap duoc",
               "title": "Region"
             },
-            "description": "Loc theo ma o, lap duoc"
+            "description": "Loc theo ma vung, lap duoc"
           },
           {
             "name": "source",
@@ -422,15 +464,56 @@
         }
       }
     },
+    "/api/v1/sources": {
+      "get": {
+        "tags": [
+          "source"
+        ],
+        "summary": "List Sources",
+        "description": "Nguon du lieu dang dung; Frontend lay period_from/period_to de gioi han bo chon thoi gian.",
+        "operationId": "list_sources_api_v1_sources_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "type": "array",
+                  "title": "Response List Sources Api V1 Sources Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/regions": {
       "get": {
         "tags": [
           "region"
         ],
         "summary": "List Regions",
-        "description": "Tra ve GeoJSON FeatureCollection cac o luoi. Khong chua toa do tram.",
+        "description": "GeoJSON ranh gioi tinh (34) hoac phuong/xa TP.HCM (168). Khong chua toa do tram/cell.",
         "operationId": "list_regions_api_v1_regions_get",
         "parameters": [
+          {
+            "name": "level",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "province",
+                "ward"
+              ],
+              "type": "string",
+              "default": "province",
+              "title": "Level"
+            }
+          },
           {
             "name": "simplify",
             "in": "query",
@@ -440,7 +523,7 @@
               "maximum": 0.01,
               "minimum": 0,
               "description": "Do don gian hoa (do)",
-              "default": 0,
+              "default": 0.001,
               "title": "Simplify"
             },
             "description": "Do don gian hoa (do)"

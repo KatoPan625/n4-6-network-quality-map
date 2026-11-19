@@ -1,11 +1,11 @@
 meta {
-  name: 05 Region detail
+  name: 05 Regions phuong
   type: http
   seq: 5
 }
 
 get {
-  url: {{baseUrl}}/api/v1/regions/G1K-690-1195/kpis?source=BE-SAMPLE
+  url: {{baseUrl}}/api/v1/regions?level=ward
   body: none
   auth: none
 }
@@ -13,6 +13,6 @@ get {
 tests {
   test("status 200", function() {
     expect(res.getStatus()).to.equal(200);
-    expect(res.getBody().kpis.length).to.be.above(0);
+    expect(res.getBody().features.length).to.equal(168);
   });
 }

@@ -9,13 +9,16 @@ Save "$root\environments\local.bru" "vars {`n  baseUrl: http://localhost:8000`n}
 
 $reqs = @(
   @("01 Health DB",       "/health/db",   200, 'expect(res.getBody().status).to.equal("ok");'),
-  @("02 KPI list",        "/api/v1/kpis", 200, 'expect(res.getBody().length).to.be.above(0);'),
-  @("03 Regions GeoJSON", "/api/v1/regions", 200, 'expect(res.getBody().type).to.equal("FeatureCollection");'),
-  @("04 KPI values",      "/api/v1/kpi-values?kpi=latency&period_start=2026-10-26&source=BE-SAMPLE", 200, 'expect(res.getBody().items.length).to.equal(165); expect(res.getBody().source.data_nature).to.equal("simulated");'),
-  @("05 Region detail",   "/api/v1/regions/G1K-690-1195/kpis?source=BE-SAMPLE", 200, 'expect(res.getBody().kpis.length).to.be.above(0);'),
-  @("06 Compare",         "/api/v1/compare?kpi=latency&period_a=2026-10-19&period_b=2026-10-26&source=BE-SAMPLE", 200, 'expect(res.getBody().items.length).to.equal(165);'),
-  @("07 Unknown KPI 404", "/api/v1/kpi-values?kpi=khong_co&period_start=2026-10-26", 404, ''),
-  @("08 Bad date 422",    "/api/v1/kpi-values?kpi=latency&period_start=10-2026", 422, '')
+  @("02 KPI list",        "/api/v1/kpis", 200, 'expect(res.getBody().length).to.equal(4);'),
+  @("03 Sources",         "/api/v1/sources", 200, 'expect(res.getBody()[0].is_default).to.equal(true);'),
+  @("04 Regions tinh",    "/api/v1/regions", 200, 'expect(res.getBody().features.length).to.equal(34);'),
+  @("05 Regions phuong",  "/api/v1/regions?level=ward", 200, 'expect(res.getBody().features.length).to.equal(168);'),
+  @("06 KPI values gio",  "/api/v1/kpi-values?kpi=cssr&level=ward&at=2026-10-02T20:00&source=BE-SAMPLE", 200, 'expect(res.getBody().items.length).to.equal(168); expect(res.getBody().source.data_nature).to.equal("simulated");'),
+  @("07 KPI values ngay", "/api/v1/kpi-values?kpi=traffic&period_type=day&at=2026-10-02&source=BE-SAMPLE", 200, 'expect(res.getBody().items.length).to.equal(34);'),
+  @("08 Region detail",   "/api/v1/regions/25760/kpis?source=BE-SAMPLE", 200, 'expect(res.getBody().kpis.length).to.equal(4);'),
+  @("09 Compare",         "/api/v1/compare?kpi=cssr&a=2026-10-01&b=2026-10-02&source=BE-SAMPLE", 200, 'expect(res.getBody().items.length).to.equal(34);'),
+  @("10 Unknown KPI 404", "/api/v1/kpi-values?kpi=khong_co&at=2026-10-02T20:00&source=BE-SAMPLE", 404, ''),
+  @("11 Gio le 422",      "/api/v1/kpi-values?kpi=cssr&at=2026-10-02T20:30&source=BE-SAMPLE", 422, '')
 )
 $i = 0
 foreach ($r in $reqs) {

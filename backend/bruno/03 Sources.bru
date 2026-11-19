@@ -1,0 +1,18 @@
+meta {
+  name: 03 Sources
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/api/v1/sources
+  body: none
+  auth: none
+}
+
+tests {
+  test("status 200", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody()[0].is_default).to.equal(true);
+  });
+}

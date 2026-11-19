@@ -14,26 +14,22 @@ import httpx
 
 BASE = "http://localhost:8000"
 CASES = [
-    ("GET /api/v1/regions", "/api/v1/regions", {}),
+    ("GET /api/v1/regions (34 tinh)", "/api/v1/regions", {}),
+    ("GET /api/v1/regions?level=ward", "/api/v1/regions", {"level": "ward"}),
     (
-        "GET /api/v1/kpi-values",
+        "GET /api/v1/kpi-values (gio, phuong)",
         "/api/v1/kpi-values",
-        {"kpi": "latency", "period_start": "2026-10-26", "source": "BE-SAMPLE"},
+        {"kpi": "cssr", "level": "ward", "at": "2026-10-02T20:00", "source": "BE-SAMPLE"},
     ),
     (
         "GET /api/v1/regions/{code}/kpis",
-        "/api/v1/regions/G1K-690-1195/kpis",
-        {"source": "BE-SAMPLE"},
+        "/api/v1/regions/79/kpis",
+        {"period_type": "hour", "source": "BE-SAMPLE"},
     ),
     (
-        "GET /api/v1/compare",
+        "GET /api/v1/compare (ngay)",
         "/api/v1/compare",
-        {
-            "kpi": "latency",
-            "period_a": "2026-10-19",
-            "period_b": "2026-10-26",
-            "source": "BE-SAMPLE",
-        },
+        {"kpi": "cssr", "a": "2026-10-01", "b": "2026-10-02", "source": "BE-SAMPLE"},
     ),
 ]
 
@@ -46,9 +42,7 @@ def pct(data: list[float], p: float) -> float:
 def main() -> None:
     n = int(sys.argv[1]) if len(sys.argv) > 1 else 100
     print(f"Baseline API - {datetime.now():%Y-%m-%d %H:%M} - {platform.node()} - {n} lan/endpoint")
-    print(
-        "Du lieu: 165 o 1 km, 8 KPI, 2 tuan (nguon BE-SAMPLE). Server local, 1 worker, 1 client.\n"
-    )
+    print("Du lieu: 34 tinh + 168 phuong, 996 cell, 4 KPI, 72 gio (BE-SAMPLE). Server local.\n")
     print(f"{'Endpoint':34} {'p50 ms':>8} {'p95 ms':>8} {'max ms':>8} {'loi':>4}")
     with httpx.Client(base_url=BASE, timeout=10) as client:
         for name, path, params in CASES:
