@@ -32,8 +32,8 @@ Dự án học kỳ doanh nghiệp UTH – VNPT NET. Nhóm xây dựng bản đ�
 | `backend/` | FastAPI + PostgreSQL 17/PostGIS 3.5.2. Hướng dẫn chạy: [backend/README.md](backend/README.md); hợp đồng API: [backend/docs/api-contract.md](backend/docs/api-contract.md) |
 | `db/` | SQL schema chính thức và script refresh materialized view |
 | `docs/` | Thiết kế CSDL ([SCHEMA.md](docs/SCHEMA.md)) và mẫu báo cáo dùng chung |
-| `frontend/` | Chưa có (Đức) |
-| `data/` | Chưa có (Vũ). `data/raw/`, `data/private/`, `data/generated/` không được commit |
+| `frontend/` | Bản đồ web tương tác: hiển thị KPI theo tỉnh/phường, bộ lọc, chú giải, màn hình chi tiết và so sánh |
+| `data/` | Sinh dữ liệu mô phỏng, mô tả phương pháp và kiểm thử dữ liệu |
 
 ## Bảo mật dữ liệu
 
