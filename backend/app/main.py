@@ -3,6 +3,7 @@ from typing import Annotated, Literal
 
 from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
@@ -22,6 +23,8 @@ app.add_middleware(
     allow_methods=["GET"],
     allow_headers=["*"],
 )
+# Nen phan hoi lon (ranh gioi GeoJSON ~425 KB); muc 5 nhanh hon 9 ma kich thuoc gan nhu nhau
+app.add_middleware(GZipMiddleware, minimum_size=1000, compresslevel=5)
 
 app.include_router(kpi_router)
 

@@ -64,7 +64,7 @@ JSON mẫu lấy từ nguồn thử `BE-SAMPLE` (giá trị giả lập, chỉ �
 
 ### 3.3 `GET /api/v1/regions`
 - `level`: `province` (mặc định, 34 vùng) hoặc `ward` (168 phường/xã TP.HCM).
-- `simplify`: 0–0.01 độ, mặc định 0.001 (khoảng 100 m). Khoảng 425 KB cho tỉnh, 167 KB cho phường.
+- `simplify`: 0–0.01 độ, mặc định 0.001 (khoảng 100 m). Khoảng 425 KB cho tỉnh, 167 KB cho phường; khi client gửi `Accept-Encoding: gzip` (trình duyệt tự gửi), API nén còn khoảng 126 KB và 38 KB.
 ```json
 {"type": "FeatureCollection", "features": [
   {"type": "Feature", "id": "79",

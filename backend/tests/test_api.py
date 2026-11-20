@@ -60,5 +60,13 @@ def test_regions_ward_level_is_168_hcm_wards():
     assert {f["properties"]["parent_code"] for f in features} == {"79"}
 
 
+def test_regions_geojson_is_gzipped_when_client_accepts():
+    res = client.get("/api/v1/regions", headers={"Accept-Encoding": "gzip"})
+    assert res.headers["content-encoding"] == "gzip"
+    assert res.json()["type"] == "FeatureCollection"
+    plain = client.get("/api/v1/regions", headers={"Accept-Encoding": "identity"})
+    assert "content-encoding" not in plain.headers
+
+
 def test_regions_bad_level_is_422():
     assert client.get("/api/v1/regions", params={"level": "district"}).status_code == 422
