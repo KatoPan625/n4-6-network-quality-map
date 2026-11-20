@@ -1,6 +1,7 @@
 """Test API KPI tren du lieu thu BE-SAMPLE (scripts/load_sample.py, cac ca co y o CASE_HOUR)."""
 
 from datetime import timedelta
+from pathlib import Path
 
 from fastapi.testclient import TestClient
 from sqlalchemy import text
@@ -166,18 +167,21 @@ def test_compare_delta_is_b_minus_a_and_null_when_missing():
     assert items[ZERO_TRAFFIC_WARD]["delta"] is None
 
 
+THRESHOLDS_SQL = Path(__file__).resolve().parents[2] / "db" / "N4.6_KPI_Thresholds.sql"
+
+
+def load_thresholds(conn):
+    # goi thang psycopg: SQLAlchemy doc '%' trong file la placeholder
+    conn.connection.driver_connection.execute(THRESHOLDS_SQL.read_text(encoding="utf-8"))
+
+
 def test_quality_level_also_for_partial_regions():
-    """Them nguong tam, refresh MV trong 1 giao dich roi rollback, khong de lai gi."""
+    """Nap file nguong de xuat, refresh MV trong 1 giao dich roi rollback, khong de lai gi."""
     with engine.connect() as conn:
         trans = conn.begin()
-        conn.execute(
-            text(
-                "INSERT INTO kpi_thresholds (kpi_id, quality_level, min_value, max_value, "
-                "threshold_type, threshold_basis) "
-                "SELECT kpi_id, lv, lo, hi, 'team_proposed', 'chi de test' FROM kpis, "
-                "(VALUES ('good', 97::numeric, NULL::numeric), ('medium', 95, 97), "
-                "('poor', NULL, 95)) AS t(lv, lo, hi) WHERE kpi_code = 'cssr'"
-            )
+        load_thresholds(conn)
+        checks = dict(
+            conn.execute(text("SELECT kpi_code, check_result FROM v_kpi_threshold_check")).all()
         )
         conn.execute(text("REFRESH MATERIALIZED VIEW mv_region_kpi"))
         app.dependency_overrides[get_session] = lambda: Session(bind=conn)
@@ -186,6 +190,7 @@ def test_quality_level_also_for_partial_regions():
         finally:
             app.dependency_overrides.clear()
             trans.rollback()
+    assert checks == dict.fromkeys(["cssr", "service_drop_all", "user_throughput"], "ok")
     partial = items[PARTIAL_WARD]
     assert partial["status"] == "partial" and partial["quality_level"] is not None
     assert items[POOR_WARD]["quality_level"] == "poor"
@@ -193,5 +198,39 @@ def test_quality_level_also_for_partial_regions():
     for i in items.values():
         if i["value"] is not None:
             v = i["value"]
-            assert i["quality_level"] == ("good" if v >= 97 else "medium" if v >= 95 else "poor")
+            assert i["quality_level"] == ("good" if v >= 98 else "medium" if v >= 95 else "poor")
             assert i["threshold_type"] == "team_proposed"
+
+
+def test_drop_rate_boundary_is_inclusive_upper():
+    """service_drop_all cang thap cang tot: dung 2 -> good, dung 5 -> medium (QCVN ghi <=)."""
+    special = {PARTIAL_WARD, POOR_WARD, ZERO_TRAFFIC_WARD, INVALID_CELL.split("-")[1]}
+    before = values(kpi="service_drop_all", level="ward", at=HOUR)
+    w2, w5 = [c for c, i in before.items() if i["status"] == "ok" and c not in special][:2]
+    with engine.connect() as conn:
+        trans = conn.begin()
+        load_thresholds(conn)
+        for ward, v in ((w2, 2), (w5, 5)):
+            conn.execute(
+                text(
+                    "UPDATE cell_kpi_values x SET value = :v FROM cells c, regions r, kpis k, "
+                    "data_sources s WHERE x.cell_id = c.cell_id AND c.ward_id = r.region_id "
+                    "AND x.kpi_id = k.kpi_id AND x.source_id = s.source_id "
+                    "AND r.region_code = :w AND k.kpi_code = 'service_drop_all' "
+                    "AND s.source_code = 'BE-SAMPLE' AND x.period_start = :t AND x.status = 'ok'"
+                ),
+                {"v": v, "w": ward, "t": CASE_HOUR},
+            )
+        conn.execute(text("REFRESH MATERIALIZED VIEW mv_region_kpi"))
+        app.dependency_overrides[get_session] = lambda: Session(bind=conn)
+        try:
+            items = values(kpi="service_drop_all", level="ward", at=HOUR)
+        finally:
+            app.dependency_overrides.clear()
+            trans.rollback()
+    assert (items[w2]["value"], items[w2]["quality_level"]) == (2, "good")
+    assert (items[w5]["value"], items[w5]["quality_level"]) == (5, "medium")
+    for i in items.values():
+        if i["value"] is not None:
+            v = i["value"]
+            assert i["quality_level"] == ("good" if v <= 2 else "medium" if v <= 5 else "poor")
