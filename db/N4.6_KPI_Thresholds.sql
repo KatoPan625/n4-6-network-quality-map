@@ -50,7 +50,7 @@ FROM (VALUES
      'Tuong ung ty le cuoc goi bi roi <= 2 % cua QCVN 36:2022/BTTTT.',
      'QCVN 36:2022/BTTTT (Thong tu 19/2022/TT-BTTTT), chi tieu ty le cuoc goi bi roi <= 2 %',
      'https://thuvienphapluat.vn/van-ban/Cong-nghe-thong-tin/Thong-tu-19-2022-TT-BTTTT-Quy-chuan-chat-luong-dich-vu-dien-thoai-tren-mang-vien-thong-di-dong-542064.aspx',
-     'Service Drop All la cong thuc de xuat theo thuc tien van hanh, khong phai cong thuc 3GPP; dang cho Mentor VNPT xac nhan.'),
+     'Service Drop All: cong thuc de xuat theo thuc tien van hanh cua nhom, su dung cho du lieu mo phong; khong phai cong thuc 3GPP.'),
     ('service_drop_all', 'medium', 2, 5,
      'Vuot muc QCVN 36:2022 nhung con trong muc truyen tai du lieu bi roi <= 5 % cua QCVN 81:2019/BTTTT.',
      'QCVN 81:2019/BTTTT, chi tieu ty le truyen tai du lieu bi roi <= 5 %',
