@@ -411,6 +411,7 @@ ALTER FUNCTION n46.touch_kpis_updated_at() SET search_path = pg_catalog, n46, pu
 -- ---------------------------------------------------------------------------
 -- 7. VIEW v_region_kpi: tong hop THEO GIO cell -> ward / province.
 --    Phan loai threshold khi value IS NOT NULL, ke ca status='partial'.
+--    Bien: KPI cang cao cang tot dung '[)' (>= min); cang thap cang tot dung '(]' (<= max).
 --    KPI quality: SUM(KPI_cell * traffic_cell) / SUM(traffic_cell)
 --    cells_reported dem cell co KPI va Traffic hop le (Traffic co the = 0).
 --    Mau so chi gom Traffic > 0 tren cung tap cell co KPI hop le; cell Traffic=0 khong dong gop trong so.
@@ -565,11 +566,13 @@ LEFT JOIN kpi_thresholds t
   ON t.kpi_id = a.kpi_id
  AND a.is_quality_kpi IS TRUE
  AND a.value IS NOT NULL
- AND a.value <@ numrange(t.min_value, t.max_value, '[)');
+ AND a.value <@ numrange(t.min_value, t.max_value,
+                          CASE WHEN a.higher_is_better THEN '[)' ELSE '(]' END);
 
 -- ---------------------------------------------------------------------------
 -- 8. VIEW v_region_kpi_daily: tong hop ngay theo lich Asia/Ho_Chi_Minh.
 --    Phan loai threshold khi value IS NOT NULL, ke ca status='partial'.
+--    Bien: KPI cang cao cang tot dung '[)' (>= min); cang thap cang tot dung '(]' (<= max).
 --    Weighted value duoc tinh lai tu tat ca cell-hour hop le trong ngay.
 --    status ngay dua tren cell_hours_reported / cell_hours_expected, khong
 --    chi dua tren viec mot cell tung co it nhat mot gio du lieu.
@@ -742,7 +745,8 @@ LEFT JOIN kpi_thresholds t
   ON t.kpi_id = a.kpi_id
  AND a.is_quality_kpi IS TRUE
  AND a.value IS NOT NULL
- AND a.value <@ numrange(t.min_value, t.max_value, '[)');
+ AND a.value <@ numrange(t.min_value, t.max_value,
+                          CASE WHEN a.higher_is_better THEN '[)' ELSE '(]' END);
 
 -- ---------------------------------------------------------------------------
 -- 9. VIEW kiem tra threshold.
@@ -790,8 +794,8 @@ VALUES
 ('service_drop_all', 'Service Drop All', 'retainability', '%', FALSE, TRUE, TRUE,
  'traffic_weighted', 0, 100,
  'Ty le E-RAB giai phong bat thuong trong khi van con du lieu trong buffer tren tong so E-RAB giai phong; day la dinh nghia van hanh du an su dung.',
- 'Service Drop All (%) = so E-RAB giai phong bat thuong khi con du lieu trong buffer / tong so E-RAB giai phong x 100. DAY KHONG PHAI cong thuc do 3GPP quy dinh. 3GPP TS 32.450 V19.0.0 (2025-10), clause 6.2.1 dinh nghia E-RAB Retainability theo so lan giai phong bat thuong tren thoi gian phien E-RAB (events/second), la chi so khac. Neu tong so E-RAB giai phong bang 0 thi gia tri KPI khong xac dinh va phai duoc sinh voi status=missing, value=NULL. Du lieu mo phong sinh truc tiep gia tri KPI o cap cell/gio; khong luu counter trong CSDL.',
- 'Dinh nghia van hanh do nhom su dung; khong phai cong thuc 3GPP. Tham chieu de phan biet: 3GPP TS 32.450 V19.0.0 (2025-10), clause 6.2.1 ve E-RAB Retainability.', 2),
+ 'Service Drop All (%) = so E-RAB giai phong bat thuong khi con du lieu trong buffer / tong so E-RAB giai phong x 100. DAY KHONG PHAI cong thuc do 3GPP quy dinh; la cong thuc de xuat theo thuc tien van hanh cua nhom, su dung cho du lieu mo phong. 3GPP TS 32.450 V19.0.0 (2025-10), clause 6.2.1 dinh nghia E-RAB Retainability theo so lan giai phong bat thuong tren thoi gian phien E-RAB (events/second), la chi so khac. Neu tong so E-RAB giai phong bang 0 thi gia tri KPI khong xac dinh va phai duoc sinh voi status=missing, value=NULL. Du lieu mo phong sinh truc tiep gia tri KPI o cap cell/gio; khong luu counter trong CSDL.',
+ 'Cong thuc de xuat theo thuc tien van hanh cua nhom, su dung cho du lieu mo phong; khong phai cong thuc 3GPP. Tham chieu de phan biet: 3GPP TS 32.450 V19.0.0 (2025-10), clause 6.2.1 ve E-RAB Retainability.', 2),
 ('user_throughput', 'User Throughput (Downlink)', 'user_performance', 'Mbps', TRUE, TRUE, FALSE,
  'traffic_weighted', 0, NULL,
  'Thong luong nguoi dung tai xuong tai cap cell, luu theo Mbps.',

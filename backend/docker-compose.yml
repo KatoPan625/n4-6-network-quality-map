@@ -2,6 +2,8 @@ services:
   db:
     image: postgis/postgis:17-3.5
     container_name: n46-postgis
+    # Docker Desktop bi tat/khoi dong lai thi container tu bat lai
+    restart: unless-stopped
     environment:
       POSTGRES_DB: ${DB_NAME}
       POSTGRES_USER: ${DB_USER}
