@@ -1,81 +1,51 @@
 /**
  * Xử lý màu sắc và định dạng KPI theo Hợp đồng API N4.6
+ * Áp dụng trực tiếp quality_level (good, medium, poor) từ API
+ * Không dùng ngưỡng hardcode ở Frontend
  */
 
 export const COLORS = {
-  good: '#10b981',      // Xanh lá - Tốt
-  medium: '#f59e0b',    // Vàng cam - Trung bình
-  poor: '#ef4444',      // Đỏ - Kém
-  missing: '#9ca3af',   // Xám - Không có dữ liệu
-  noTraffic: '#64748b', // Xám xanh - Không có lưu lượng
+  good: '#10b981',       // Xanh lá - Tốt
+  medium: '#f59e0b',     // Vàng cam - Trung bình
+  poor: '#ef4444',       // Đỏ - Kém
+  missing: '#9ca3af',    // Xám - Không có dữ liệu
+  noTraffic: '#64748b',  // Xám xanh - Không có lưu lượng (traffic = 0)
+  traffic: '#38bdf8',    // Xanh dương trung tính - Lưu lượng (đơn sắc)
+  unclassified: '#94a3b8', // Xám trung tính khi quality_level là null
   defaultBorder: '#334155',
   partialBorder: '#d97706',
   highlight: '#2563eb',
 }
 
 /**
- * Tính toán mức chất lượng fallback khi backend chưa trả quality_level
- */
-export function deriveQualityLevel(kpiCode, value) {
-  if (value === null || value === undefined) return null
-
-  switch (kpiCode) {
-    case 'cssr': // Càng cao càng tốt (%), QCVN: >=98 tốt, >=95 trung bình, <95 kém
-      if (value >= 98) return 'good'
-      if (value >= 95) return 'medium'
-      return 'poor'
-
-    case 'service_drop_all': // Càng thấp càng tốt (%), QCVN: <=2 tốt, <=5 trung bình, >5 kém
-      if (value <= 2) return 'good'
-      if (value <= 5) return 'medium'
-      return 'poor'
-
-    case 'user_throughput': // Càng cao càng tốt (Mbps), VNPT: >=16 tốt, >=5 trung bình, <5 kém
-      if (value >= 16) return 'good'
-      if (value >= 5) return 'medium'
-      return 'poor'
-
-    default:
-      return null
-  }
-}
-
-/**
  * Lấy màu tô fillColor dựa trên item KPI và cấu hình KPI
+ * Hoàn toàn dựa trên quality_level từ API trả về, không dùng ngưỡng fallback
  */
-export function getKpiFillColor(item, kpiMeta, maxTraffic = 500) {
+export function getKpiFillColor(item, kpiMeta) {
   if (!item) return COLORS.missing
 
-  // 1. Kiểm tra không có traffic
+  // 1. Kiểm tra trường hợp không có lưu lượng (reason = 'no_positive_traffic')
   if (item.reason === 'no_positive_traffic') {
     return COLORS.noTraffic
   }
 
-  // 2. Kiểm tra missing hoặc value null
+  // 2. Kiểm tra missing hoặc value null -> Tô màu xám theo trạng thái
   if (item.status === 'missing' || item.value === null || item.value === undefined) {
     return COLORS.missing
   }
 
-  // 3. Nếu là traffic (không có ngưỡng, tô theo thang liên tục)
+  // 3. Nếu là KPI traffic: Không phân loại chất lượng, tô màu đơn sắc trung tính
   if (kpiMeta?.kpi_code === 'traffic') {
-    const v = item.value
-    // Thang màu từ xanh dương nhạt đến tím đậm
-    if (v <= 0) return COLORS.noTraffic
-    const ratio = Math.min(Math.max(v / (maxTraffic || 100), 0.1), 1)
-    if (ratio < 0.25) return '#93c5fd'
-    if (ratio < 0.5) return '#60a5fa'
-    if (ratio < 0.75) return '#3b82f6'
-    return '#1d4ed8'
+    return COLORS.traffic
   }
 
-  // 4. Lấy quality_level từ API hoặc từ hàm tính fallback
-  const qLevel = item.quality_level || deriveQualityLevel(kpiMeta?.kpi_code, item.value)
+  // 4. Với 3 KPI chất lượng: Sử dụng trực tiếp quality_level từ API
+  if (item.quality_level === 'good') return COLORS.good
+  if (item.quality_level === 'medium') return COLORS.medium
+  if (item.quality_level === 'poor') return COLORS.poor
 
-  if (qLevel === 'good') return COLORS.good
-  if (qLevel === 'medium') return COLORS.medium
-  if (qLevel === 'poor') return COLORS.poor
-
-  return '#94a3b8'
+  // 5. Nếu quality_level là null (chưa có ngưỡng): Tô màu trung tính
+  return COLORS.unclassified
 }
 
 /**
@@ -152,15 +122,17 @@ export function getStatusBadge(item) {
 }
 
 /**
- * Tên mức chất lượng hiển thị
+ * Tên mức chất lượng hiển thị (chỉ đọc trực tiếp từ API)
  */
 export function getQualityLevelName(item, kpiMeta) {
   if (item?.value === null || item?.value === undefined) return 'N/A'
-  if (kpiMeta?.kpi_code === 'traffic') return 'Lưu lượng tổng'
 
-  const q = item.quality_level || deriveQualityLevel(kpiMeta?.kpi_code, item.value)
-  if (q === 'good') return 'Tốt'
-  if (q === 'medium') return 'Trung bình'
-  if (q === 'poor') return 'Kém'
-  return 'Chưa phân loại'
+  // KPI traffic không phân loại chất lượng
+  if (kpiMeta?.kpi_code === 'traffic') return null
+
+  if (item.quality_level === 'good') return 'Tốt'
+  if (item.quality_level === 'medium') return 'Trung bình'
+  if (item.quality_level === 'poor') return 'Kém'
+
+  return 'Chưa có ngưỡng đánh giá'
 }

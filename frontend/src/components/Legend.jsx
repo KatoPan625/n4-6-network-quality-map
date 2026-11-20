@@ -6,6 +6,7 @@ import { COLORS } from '../utils/colorScale'
  * 1. Đơn vị đo KPI
  * 2. Thời gian cập nhật dữ liệu
  * 3. Nhãn "Dữ liệu mô phỏng"
+ * 4. Chú thích ngưỡng đề xuất của nhóm (team_proposed)
  */
 export default function Legend({ kpiMeta, periodAt, updatedAt, sourceMeta }) {
   const isTraffic = kpiMeta?.kpi_code === 'traffic'
@@ -52,37 +53,36 @@ export default function Legend({ kpiMeta, periodAt, updatedAt, sourceMeta }) {
         </div>
       </div>
 
-      {/* Thang màu chất lượng */}
+      {/* Thang màu và quy ước hiển thị */}
       <div className="legend-items">
-        <div className="legend-subtitle">Quy ước mức chất lượng:</div>
         {!isTraffic ? (
           <>
+            <div className="legend-subtitle">
+              Mức chất lượng (ngưỡng đề xuất của nhóm - team_proposed):
+            </div>
             <div className="legend-row">
               <span className="color-box" style={{ backgroundColor: COLORS.good }}></span>
-              <span>Tốt {kpiMeta?.kpi_code === 'cssr' ? '(≥ 98%)' : kpiMeta?.kpi_code === 'service_drop_all' ? '(≤ 2%)' : kpiMeta?.kpi_code === 'user_throughput' ? '(≥ 16 Mbps)' : ''}</span>
+              <span>Tốt (good)</span>
             </div>
             <div className="legend-row">
               <span className="color-box" style={{ backgroundColor: COLORS.medium }}></span>
-              <span>Trung bình {kpiMeta?.kpi_code === 'cssr' ? '(95% - 98%)' : kpiMeta?.kpi_code === 'service_drop_all' ? '(2% - 5%)' : kpiMeta?.kpi_code === 'user_throughput' ? '(5 - 16 Mbps)' : ''}</span>
+              <span>Trung bình (medium)</span>
             </div>
             <div className="legend-row">
               <span className="color-box" style={{ backgroundColor: COLORS.poor }}></span>
-              <span>Kém {kpiMeta?.kpi_code === 'cssr' ? '(< 95%)' : kpiMeta?.kpi_code === 'service_drop_all' ? '(> 5%)' : kpiMeta?.kpi_code === 'user_throughput' ? '(< 5 Mbps)' : ''}</span>
+              <span>Kém (poor)</span>
+            </div>
+            <div className="legend-row">
+              <span className="color-box" style={{ backgroundColor: COLORS.unclassified }}></span>
+              <span>Chưa có ngưỡng đánh giá</span>
             </div>
           </>
         ) : (
           <>
+            <div className="legend-subtitle">Quy ước hiển thị:</div>
             <div className="legend-row">
-              <span className="color-box" style={{ backgroundColor: '#1d4ed8' }}></span>
-              <span>Lưu lượng cao</span>
-            </div>
-            <div className="legend-row">
-              <span className="color-box" style={{ backgroundColor: '#60a5fa' }}></span>
-              <span>Lưu lượng trung bình</span>
-            </div>
-            <div className="legend-row">
-              <span className="color-box" style={{ backgroundColor: '#93c5fd' }}></span>
-              <span>Lưu lượng thấp</span>
+              <span className="color-box" style={{ backgroundColor: COLORS.traffic }}></span>
+              <span>Lưu lượng (đơn sắc trung tính, không phân loại chất lượng)</span>
             </div>
           </>
         )}
@@ -90,7 +90,10 @@ export default function Legend({ kpiMeta, periodAt, updatedAt, sourceMeta }) {
         {/* Trạng thái dữ liệu */}
         <div className="legend-divider"></div>
         <div className="legend-row">
-          <span className="color-box dashed-border" style={{ backgroundColor: '#fed7aa', borderColor: COLORS.partialBorder }}></span>
+          <span
+            className="color-box dashed-border"
+            style={{ backgroundColor: '#fed7aa', borderColor: COLORS.partialBorder }}
+          ></span>
           <span>Dữ liệu một phần (thiếu cell)</span>
         </div>
         <div className="legend-row">

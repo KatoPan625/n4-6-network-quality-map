@@ -59,21 +59,13 @@ export default function MapView({
       geoJsonLayerRef.current = null
     }
 
-    // Tính max traffic nếu đang chọn kpi traffic
-    let maxTraffic = 100
-    if (kpiMeta?.kpi_code === 'traffic' && kpiItemsMap) {
-      Object.values(kpiItemsMap).forEach((item) => {
-        if (item?.value && item.value > maxTraffic) maxTraffic = item.value
-      })
-    }
-
     // Hàm lấy style cho từng polygon vùng
     const styleFeature = (feature) => {
       const code = feature.properties?.region_code
       const item = kpiItemsMap?.[code]
 
       const strokeStyle = getKpiStrokeStyle(item)
-      const fillColor = getKpiFillColor(item, kpiMeta, maxTraffic)
+      const fillColor = getKpiFillColor(item, kpiMeta)
 
       return {
         fillColor,
