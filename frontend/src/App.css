@@ -163,11 +163,17 @@
   color: #b91c1c;
   padding: 8px 16px;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   font-size: 0.85rem;
   z-index: 999;
   border-bottom: 1px solid #fca5a5;
+}
+
+.error-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .error-close-btn {
@@ -199,7 +205,7 @@
   background: #e2e8f0;
 }
 
-/* Navigation overlay (Back to province button) */
+/* Navigation overlay (Back to province button & HCM chart button) */
 .map-nav-overlay {
   position: absolute;
   top: 14px;
@@ -207,14 +213,16 @@
   z-index: 1000;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
-.btn-back-province {
+.btn-back-province,
+.btn-hcm-chart {
   background: #0f172a;
   color: #38bdf8;
   border: 1px solid #0284c7;
-  padding: 8px 14px;
+  padding: 7px 12px;
   border-radius: 8px;
   font-size: 0.82rem;
   font-weight: 700;
@@ -223,7 +231,8 @@
   transition: all 0.2s ease;
 }
 
-.btn-back-province:hover {
+.btn-back-province:hover,
+.btn-hcm-chart:hover {
   background: #0284c7;
   color: #ffffff;
 }

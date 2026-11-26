@@ -1,16 +1,25 @@
-# React + Vite
+# N4.6 — Frontend (Bản đồ chất lượng mạng 4G)
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Giao diện bản đồ web tương tác (React + Vite + Leaflet + Chart.js) hiển thị các chỉ số KPI chất lượng mạng di động 4G theo 34 tỉnh/thành phố và 168 phường/xã TP.HCM.
 
-Currently, two official plugins are available:
+## Yêu cầu
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- Node.js 18+ (hoặc 20+) và npm
+- Backend FastAPI chạy tại `http://localhost:8000` (xem hướng dẫn ở `../backend/README.md`)
 
-## React Compiler
+## Cài đặt & Chạy local
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+```powershell
+cd frontend
+npm install
+npm run dev
+```
 
-## Expanding the Oxlint configuration
+Mở trình duyệt tại `http://localhost:5173`. Vite đã cấu hình proxy `/api` sang `http://localhost:8000`.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+## Kiểm tra mã nguồn
+
+```powershell
+npm run lint    # Kiểm tra Oxlint (0 errors, 0 warnings)
+npm run build   # Build bản production vào thư mục dist/
+```

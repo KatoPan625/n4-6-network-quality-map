@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import Chart from 'chart.js/auto'
 import { fetchRegionKpis } from '../api/client'
-import { formatKpiDisplay, getStatusBadge, getQualityLevelName } from '../utils/colorScale'
+import { isQualityKpi } from '../utils/colorScale'
 
 export default function RegionModal({
   region,
@@ -13,45 +13,47 @@ export default function RegionModal({
 }) {
   const [selectedKpi, setSelectedKpi] = useState(currentKpi)
   const [periodType, setPeriodType] = useState(currentPeriodType || 'hour')
-  const [chartData, setChartData] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const [fetchResult, setFetchResult] = useState({ key: null, data: null, error: null })
 
   const canvasRef = useRef(null)
   const chartInstanceRef = useRef(null)
 
   const regionCode = region?.properties?.region_code
   const regionName = region?.properties?.region_name
+  const sourceCode = currentSource || 'BE-SAMPLE'
+  const requestKey = regionCode ? `${regionCode}|${selectedKpi}|${periodType}|${sourceCode}` : null
+
+  const loading = Boolean(requestKey) && fetchResult.key !== requestKey
+  const error = fetchResult.key === requestKey ? fetchResult.error : null
+  const chartData = fetchResult.key === requestKey ? fetchResult.data : null
+
+  const currentKpiObj = kpiList.find((k) => k.kpi_code === selectedKpi)
 
   // Tải dữ liệu chuỗi thời gian khi đổi region, KPI hoặc periodType
   useEffect(() => {
-    if (!regionCode) return
+    if (!regionCode || !requestKey) return
 
     let isMounted = true
-    setLoading(true)
-    setError(null)
 
     fetchRegionKpis({
       regionCode,
       kpi: selectedKpi,
       periodType,
-      source: currentSource || 'BE-SAMPLE',
+      source: sourceCode,
     })
       .then((data) => {
         if (!isMounted) return
-        setChartData(data)
-        setLoading(false)
+        setFetchResult({ key: requestKey, data, error: null })
       })
       .catch((err) => {
         if (!isMounted) return
-        setError(err.message)
-        setLoading(false)
+        setFetchResult({ key: requestKey, data: null, error: err.message })
       })
 
     return () => {
       isMounted = false
     }
-  }, [regionCode, selectedKpi, periodType, currentSource])
+  }, [regionCode, selectedKpi, periodType, sourceCode, requestKey])
 
   // Vẽ biểu đồ Chart.js khi chartData thay đổi
   useEffect(() => {
@@ -67,15 +69,19 @@ export default function RegionModal({
 
     const series = kpiSeriesObj.series || []
     const labels = series.map((s) => {
-      // Định dạng mốc thời gian trục X
-      if (periodType === 'hour') {
-        const d = new Date(s.at)
-        return `${d.getDate()}/${d.getMonth() + 1} ${String(d.getHours()).padStart(2, '0')}:00`
+      // Cắt trực tiếp chuỗi ISO (YYYY-MM-DDTHH:mm...) để tránh lệch múi giờ trình duyệt
+      if (periodType === 'hour' && typeof s.at === 'string' && s.at.length >= 16) {
+        const day = s.at.slice(8, 10)
+        const month = s.at.slice(5, 7)
+        const time = s.at.slice(11, 16)
+        return `${day}/${month} ${time}`
       }
       return s.at
     })
 
     const values = series.map((s) => (s.value !== null ? s.value : null))
+    const shouldBeginAtZero =
+      !isQualityKpi(currentKpiObj) || currentKpiObj?.higher_is_better === false
 
     const ctx = canvasRef.current.getContext('2d')
     chartInstanceRef.current = new Chart(ctx, {
@@ -135,7 +141,7 @@ export default function RegionModal({
             },
           },
           y: {
-            beginAtZero: selectedKpi === 'traffic' || selectedKpi === 'service_drop_all',
+            beginAtZero: shouldBeginAtZero,
             grid: { color: 'rgba(0, 0, 0, 0.06)' },
             title: {
               display: true,
@@ -151,9 +157,7 @@ export default function RegionModal({
         chartInstanceRef.current.destroy()
       }
     }
-  }, [chartData, selectedKpi, periodType, loading])
-
-  const currentKpiObj = kpiList.find((k) => k.kpi_code === selectedKpi)
+  }, [chartData, selectedKpi, periodType, loading, currentKpiObj])
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
@@ -220,7 +224,7 @@ export default function RegionModal({
 
         <div className="modal-footer">
           <div className="modal-info">
-            * Nguồn dữ liệu: <strong>{currentSource || 'BE-SAMPLE'}</strong> (Dữ liệu mô phỏng di động 4G)
+            * Nguồn dữ liệu: <strong>{sourceCode}</strong> (Dữ liệu mô phỏng di động 4G)
           </div>
           <button className="btn-secondary" onClick={onClose}>
             Đóng

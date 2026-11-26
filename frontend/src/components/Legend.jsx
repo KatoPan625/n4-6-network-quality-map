@@ -1,5 +1,5 @@
 import React from 'react'
-import { COLORS } from '../utils/colorScale'
+import { COLORS, isQualityKpi } from '../utils/colorScale'
 
 /**
  * Component Chú giải (Legend) đáp ứng các tiêu chí nghiệm thu của Issue #5:
@@ -9,7 +9,7 @@ import { COLORS } from '../utils/colorScale'
  * 4. Chú thích ngưỡng đề xuất của nhóm (team_proposed)
  */
 export default function Legend({ kpiMeta, periodAt, updatedAt, sourceMeta }) {
-  const isTraffic = kpiMeta?.kpi_code === 'traffic'
+  const showQualityScale = isQualityKpi(kpiMeta)
 
   // Format thời gian cập nhật
   const formattedUpdate = updatedAt
@@ -55,7 +55,7 @@ export default function Legend({ kpiMeta, periodAt, updatedAt, sourceMeta }) {
 
       {/* Thang màu và quy ước hiển thị */}
       <div className="legend-items">
-        {!isTraffic ? (
+        {showQualityScale ? (
           <>
             <div className="legend-subtitle">
               Mức chất lượng (ngưỡng đề xuất của nhóm - team_proposed):
@@ -81,8 +81,8 @@ export default function Legend({ kpiMeta, periodAt, updatedAt, sourceMeta }) {
           <>
             <div className="legend-subtitle">Quy ước hiển thị:</div>
             <div className="legend-row">
-              <span className="color-box" style={{ backgroundColor: COLORS.traffic }}></span>
-              <span>Lưu lượng (đơn sắc trung tính, không phân loại chất lượng)</span>
+              <span className="color-box" style={{ backgroundColor: COLORS.nonQuality }}></span>
+              <span>Chỉ số định lượng (đơn sắc trung tính, không phân loại chất lượng)</span>
             </div>
           </>
         )}

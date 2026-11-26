@@ -15,26 +15,23 @@ export default function FilterBar({
   onChangeSource,
   loading,
 }) {
-  // Tạo danh sách các giờ mẫu nhanh cho BE-SAMPLE (01/10/2026 đến 03/10/2026)
-  const isSample = selectedSource === 'BE-SAMPLE'
-
-  // Điều hướng thời gian tới/lùi 1 bước
+  // Điều hướng thời gian tới/lùi 1 bước (tách chuỗi trực tiếp để tránh lệch múi giờ)
   const handleStepTime = (delta) => {
+    const [y, m, d] = at.substring(0, 10).split('-').map(Number)
     if (periodType === 'day') {
-      const currentDate = new Date(at)
-      currentDate.setDate(currentDate.getDate() + delta)
-      const y = currentDate.getFullYear()
-      const m = String(currentDate.getMonth() + 1).padStart(2, '0')
-      const d = String(currentDate.getDate()).padStart(2, '0')
-      onChangeAt(`${y}-${m}-${d}`)
+      const currentDate = new Date(y, m - 1, d + delta)
+      const ny = currentDate.getFullYear()
+      const nm = String(currentDate.getMonth() + 1).padStart(2, '0')
+      const nd = String(currentDate.getDate()).padStart(2, '0')
+      onChangeAt(`${ny}-${nm}-${nd}`)
     } else {
-      const currentDate = new Date(at)
-      currentDate.setHours(currentDate.getHours() + delta)
-      const y = currentDate.getFullYear()
-      const m = String(currentDate.getMonth() + 1).padStart(2, '0')
-      const d = String(currentDate.getDate()).padStart(2, '0')
-      const h = String(currentDate.getHours()).padStart(2, '0')
-      onChangeAt(`${y}-${m}-${d}T${h}:00`)
+      const hourPart = Number(at.substring(11, 13)) || 0
+      const currentDate = new Date(y, m - 1, d, hourPart + delta)
+      const ny = currentDate.getFullYear()
+      const nm = String(currentDate.getMonth() + 1).padStart(2, '0')
+      const nd = String(currentDate.getDate()).padStart(2, '0')
+      const nh = String(currentDate.getHours()).padStart(2, '0')
+      onChangeAt(`${ny}-${nm}-${nd}T${nh}:00`)
     }
   }
 

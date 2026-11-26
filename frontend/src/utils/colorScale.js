@@ -10,11 +10,22 @@ export const COLORS = {
   poor: '#ef4444',       // Đỏ - Kém
   missing: '#9ca3af',    // Xám - Không có dữ liệu
   noTraffic: '#64748b',  // Xám xanh - Không có lưu lượng (traffic = 0)
-  traffic: '#38bdf8',    // Xanh dương trung tính - Lưu lượng (đơn sắc)
+  nonQuality: '#38bdf8', // Xanh dương trung tính cho KPI không phân loại chất lượng
   unclassified: '#94a3b8', // Xám trung tính khi quality_level là null
   defaultBorder: '#334155',
   partialBorder: '#d97706',
   highlight: '#2563eb',
+}
+
+/**
+ * Kiểm tra KPI có phải KPI chất lượng (dùng cờ is_quality_kpi từ /api/v1/kpis)
+ */
+export function isQualityKpi(kpiMeta) {
+  if (!kpiMeta) return false
+  if (typeof kpiMeta.is_quality_kpi === 'boolean') {
+    return kpiMeta.is_quality_kpi
+  }
+  return kpiMeta.higher_is_better !== null && kpiMeta.higher_is_better !== undefined
 }
 
 /**
@@ -34,12 +45,12 @@ export function getKpiFillColor(item, kpiMeta) {
     return COLORS.missing
   }
 
-  // 3. Nếu là KPI traffic: Không phân loại chất lượng, tô màu đơn sắc trung tính
-  if (kpiMeta?.kpi_code === 'traffic') {
-    return COLORS.traffic
+  // 3. Nếu không phải KPI chất lượng (is_quality_kpi === false): tô màu đơn sắc trung tính
+  if (!isQualityKpi(kpiMeta)) {
+    return COLORS.nonQuality
   }
 
-  // 4. Với 3 KPI chất lượng: Sử dụng trực tiếp quality_level từ API
+  // 4. Với các KPI chất lượng: Sử dụng trực tiếp quality_level từ API
   if (item.quality_level === 'good') return COLORS.good
   if (item.quality_level === 'medium') return COLORS.medium
   if (item.quality_level === 'poor') return COLORS.poor
@@ -127,8 +138,8 @@ export function getStatusBadge(item) {
 export function getQualityLevelName(item, kpiMeta) {
   if (item?.value === null || item?.value === undefined) return 'N/A'
 
-  // KPI traffic không phân loại chất lượng
-  if (kpiMeta?.kpi_code === 'traffic') return null
+  // KPI không phải chất lượng (is_quality_kpi === false) thì không phân loại chất lượng
+  if (!isQualityKpi(kpiMeta)) return null
 
   if (item.quality_level === 'good') return 'Tốt'
   if (item.quality_level === 'medium') return 'Trung bình'
