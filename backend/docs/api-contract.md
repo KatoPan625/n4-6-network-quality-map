@@ -1,4 +1,4 @@
-# N4.6 – Hợp đồng API (bản nháp)
+# N4.6 – Hợp đồng API
 
 - Người soạn: An (Backend). Cập nhật: 19/11/2026. Trạng thái: **NHÁP**, chốt ở buổi họp 21/11.
 - Dựa trên schema `db/N4.6_Database_Schema.sql` (thiết kế: `docs/SCHEMA.md`): mạng di động 4G, KPI theo cell, tổng hợp lên tỉnh/phường, theo giờ/ngày.

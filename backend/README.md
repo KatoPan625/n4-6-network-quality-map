@@ -13,6 +13,7 @@ docker compose up -d --wait     # tạo CSDL + schema (4 KPI, nguồn SIM-4G-202
 uv sync
 uv run python scripts/load_regions.py  # tải GeoJSON (khoảng 180 MB, vào data/raw/) và nạp 34 tỉnh + 168 phường
 uv run python scripts/load_sample.py   # sinh + nạp BE-SAMPLE (996 cell × 4 KPI × 72 giờ), refresh MV
+uv run python scripts/generate_simulation.py  # sinh + nạp SIM-4G-2026-10 (720 giờ, khoảng 1–2 phút), refresh MV
 uv run uvicorn app.main:app --reload
 ```
 Mở http://localhost:8000/docs để thử API.
@@ -23,6 +24,12 @@ uv run pytest -q
 uv run ruff check .
 ```
 
+Bruno và đo baseline cần server đang chạy (`uv run uvicorn app.main:app` ở một terminal khác) và CSDL đã nạp `SIM-4G-2026-10`:
+```powershell
+cd bruno; npx @usebruno/cli run --env local; cd ..
+uv run python scripts/bench_api.py   # baseline thời gian phản hồi
+```
+
 ## Cấu trúc
 | Thư mục | Nội dung |
 |---|---|
@@ -30,7 +37,7 @@ uv run ruff check .
 | `../db/` | Schema (Docker nạp khi tạo CSDL lần đầu) và script refresh materialized view |
 | `scripts/` | Nạp ranh giới, sinh và nạp dữ liệu thử, công cụ đo |
 | `data/raw/` | GeoJSON ranh giới tải về (không commit) |
-| `docs/api-contract.md` | Hợp đồng API bản nháp |
+| `docs/api-contract.md` | Hợp đồng API |
 | `tests/` | Test API (cần CSDL đang chạy) |
 
 ## Làm lại CSDL từ đầu
