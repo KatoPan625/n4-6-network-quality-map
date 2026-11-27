@@ -14,5 +14,7 @@ tests {
   test("status 200", function() {
     expect(res.getStatus()).to.equal(200);
     expect(res.getBody().items.length).to.equal(34);
+    expect(res.getBody().source.source_code).to.equal("SIM-4G-2026-10");
+    expect(res.getBody().items.some((i) => i.status_a === "ok" && i.status_b === "ok")).to.equal(true);
   });
 }

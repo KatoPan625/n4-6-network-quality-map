@@ -1,6 +1,7 @@
 """Do thoi gian phan hoi API o quy mo lab (baseline, KHONG phai chi tieu nghiem thu).
 
-Can server dang chay: uv run uvicorn app.main:app
+Can server dang chay (uv run uvicorn app.main:app) va CSDL da nap SIM-4G-2026-10
+(uv run python scripts/generate_simulation.py).
 Chay: uv run python scripts/bench_api.py [so_lan]
 """
 
@@ -13,6 +14,7 @@ from datetime import datetime
 import httpx
 
 BASE = "http://localhost:8000"
+SOURCE = "SIM-4G-2026-10"
 CASES = [
     ("GET /regions (34 tinh)", "/api/v1/regions", {}),
     ("GET /regions?level=ward", "/api/v1/regions", {"level": "ward"}),
@@ -41,14 +43,28 @@ def pct(data: list[float], p: float) -> float:
     return s[min(len(s) - 1, round(p * (len(s) - 1)))]
 
 
+def check_data(client: httpx.Client) -> None:
+    """Dung som neu nguon mac dinh khong phai SIM-4G hoac chua co du lieu (API van tra 200)."""
+    body = (
+        client.get(
+            "/api/v1/kpi-values", params={"kpi": "cssr", "level": "ward", "at": "2026-10-15T20:00"}
+        )
+        .raise_for_status()
+        .json()
+    )
+    if body["source"]["source_code"] != SOURCE or not any(
+        i["status"] == "ok" for i in body["items"]
+    ):
+        sys.exit(f"Nguon mac dinh chua co du lieu {SOURCE}: chay scripts/generate_simulation.py")
+
+
 def main() -> None:
     n = int(sys.argv[1]) if len(sys.argv) > 1 else 100
     print(f"Baseline API - {datetime.now():%Y-%m-%d %H:%M} - {platform.node()} - {n} lan/endpoint")
-    print(
-        "Du lieu: 34 tinh + 168 phuong, 996 cell, 4 KPI, 720 gio (SIM-4G-2026-10). Server local.\n"
-    )
+    print(f"Du lieu: 34 tinh + 168 phuong, 996 cell, 4 KPI, 720 gio ({SOURCE}). Server local.\n")
     print(f"{'Endpoint':34} {'p50 ms':>8} {'p95 ms':>8} {'max ms':>8} {'loi':>4}")
     with httpx.Client(base_url=BASE, timeout=10) as client:
+        check_data(client)
         for name, path, params in CASES:
             client.get(path, params=params)  # khoi dong
             times, errors = [], 0

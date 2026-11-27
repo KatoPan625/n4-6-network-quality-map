@@ -22,8 +22,12 @@ Mở http://localhost:8000/docs để thử API.
 ```powershell
 uv run pytest -q
 uv run ruff check .
-cd bruno; npx @usebruno/cli run --env local; cd ..   # cần server đang chạy, dữ liệu SIM-4G-2026-10
-uv run python scripts/bench_api.py                   # baseline thời gian phản hồi trên SIM-4G-2026-10
+```
+
+Bruno và đo baseline cần server đang chạy (`uv run uvicorn app.main:app` ở một terminal khác) và CSDL đã nạp `SIM-4G-2026-10`:
+```powershell
+cd bruno; npx @usebruno/cli run --env local; cd ..
+uv run python scripts/bench_api.py   # baseline thời gian phản hồi
 ```
 
 ## Cấu trúc
