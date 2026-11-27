@@ -45,14 +45,11 @@ def pct(data: list[float], p: float) -> float:
 
 def check_data(client: httpx.Client) -> None:
     """Dung som neu nguon mac dinh khong phai SIM-4G hoac chua co du lieu (API van tra 200)."""
-    body = (
-        client.get(
-            "/api/v1/kpi-values", params={"kpi": "cssr", "level": "ward", "at": "2026-10-15T20:00"}
-        )
-        .raise_for_status()
-        .json()
+    res = client.get(
+        "/api/v1/kpi-values", params={"kpi": "cssr", "level": "ward", "at": "2026-10-15T20:00"}
     )
-    if body["source"]["source_code"] != SOURCE or not any(
+    body = res.json() if res.status_code == 200 else {"source": {}, "items": []}
+    if body["source"].get("source_code") != SOURCE or not any(
         i["status"] == "ok" for i in body["items"]
     ):
         sys.exit(f"Nguon mac dinh chua co du lieu {SOURCE}: chay scripts/generate_simulation.py")
